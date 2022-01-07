@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.8.4;
 
 /** @title BitcoinSPV */
 /** @author Summa (https://summa.one) */
