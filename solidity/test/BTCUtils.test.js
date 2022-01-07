@@ -188,8 +188,10 @@ contract('BTCUtils', () => {
     }
 
     for (let i = 0; i < extractHashError.length; i += 1) {
-      const res = await instance.extractHash(extractHashError[i].input);
-      assert.isNull(res);
+      try {
+        await instance.extractHash(extractHashError[i].input);
+        assert(false, 'expected an error');
+      } catch (e) {}
     }
   });
 
