@@ -143,8 +143,8 @@ library BTCUtils {
         // solium-disable-next-line security/no-inline-assembly
         assembly {
             let ptr := mload(0x40)
-            pop(staticcall(gas, 2, add(_b, 32), mload(_b), ptr, 32))
-            pop(staticcall(gas, 2, ptr, 32, ptr, 32))
+            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), ptr, 32))
+            pop(staticcall(gas(), 2, ptr, 32, ptr, 32))
             res := mload(ptr)
         }
     }
