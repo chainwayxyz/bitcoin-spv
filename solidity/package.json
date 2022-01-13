@@ -1,6 +1,6 @@
 {
-  "name": "@summa-tx/bitcoin-spv-sol",
-  "version": "3.1.0",
+  "name": "@keep-network/bitcoin-spv-sol",
+  "version": "v3.1.0-solc-0.8",
   "description": "bitcoin SPV proofs in Solidity",
   "scripts": {
     "compile": "truffle compile",
