@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.8.4;
 
 /** @title BitcoinSPV */
 /** @author Summa (https://summa.one) */
@@ -75,7 +75,7 @@ library BTCUtils {
     /// @notice          Changes the endianness of a uint256
     /// @dev             https://graphics.stanford.edu/~seander/bithacks.html#ReverseParallel
     /// @param _b        The unsigned integer to reverse
-    /// @return          The reversed value
+    /// @return v        The reversed value
     function reverseUint256(uint256 _b) internal pure returns (uint256 v) {
         v = _b;
 
@@ -138,13 +138,13 @@ library BTCUtils {
     /// @notice          Implements bitcoin's hash256 (double sha2)
     /// @dev             sha2 is precompiled smart contract located at address(2)
     /// @param _b        The pre-image
-    /// @return          The digest
+    /// @return res      The digest
     function hash256View(bytes memory _b) internal view returns (bytes32 res) {
         // solium-disable-next-line security/no-inline-assembly
         assembly {
             let ptr := mload(0x40)
-            pop(staticcall(gas, 2, add(_b, 32), mload(_b), ptr, 32))
-            pop(staticcall(gas, 2, ptr, 32, ptr, 32))
+            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), ptr, 32))
+            pop(staticcall(gas(), 2, ptr, 32, ptr, 32))
             res := mload(ptr)
         }
     }
