@@ -371,7 +371,10 @@ contract('BTCUtils', () => {
   it('extracts a timestamp from a header', async () => {
     for (let i = 0; i < extractTimestamp.length; i += 1) {
       const res = await instance.extractTimestamp(extractTimestamp[i].input);
-      assert(res.eq(new BN(extractTimestamp[i].output, 10)));
+      assert.equal(
+        res.toNumber(),
+        extractTimestamp[i].output
+      );
     }
   });
 

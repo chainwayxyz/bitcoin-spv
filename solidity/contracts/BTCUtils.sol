@@ -95,6 +95,29 @@ library BTCUtils {
         v = (v >> 128) | (v << 128);
     }
 
+    function reverseUint64(uint64 _b) internal pure returns (uint64 v) {
+        v = _b;
+
+        // swap bytes
+        v = ((v >> 8) & 0x00FF00FF00FF00FF) |
+            ((v & 0x00FF00FF00FF00FF) << 8);
+        // swap 2-byte long pairs
+        v = ((v >> 16) & 0x0000FFFF0000FFFF) |
+            ((v & 0x0000FFFF0000FFFF) << 16);
+        // swap 4-byte long pairs
+        v = (v >> 32) | (v << 32);
+    }
+
+    function reverseUint32(uint32 _b) internal pure returns (uint32 v) {
+        v = _b;
+
+        // swap bytes
+        v = ((v >> 8) & 0x00FF00FF) |
+            ((v & 0x00FF00FF) << 8);
+        // swap 2-byte long pairs
+        v = (v >> 16) | (v << 16);
+    }
+
     /// @notice          Converts big-endian bytes to a uint
     /// @dev             Traverses the byte array and sums the bytes
     /// @param _b        The big-endian bytes-encoded integer
@@ -103,6 +126,16 @@ library BTCUtils {
         uint256 _number;
 
         for (uint i = 0; i < _b.length; i++) {
+            _number = _number + uint8(_b[i]) * (2 ** (8 * (_b.length - (i + 1))));
+        }
+
+        return _number;
+    }
+
+    function bytesToUint(bytes4 _b) internal pure returns (uint256) {
+        uint256 _number;
+
+        for (uint i = 0; i < 4; i++) {
             _number = _number + uint8(_b[i]) * (2 ** (8 * (_b.length - (i + 1))));
         }
 
@@ -228,12 +261,12 @@ library BTCUtils {
     /// @dev             Sequence is used for relative time locks
     /// @param _input    The LEGACY input
     /// @return          The sequence bytes (LE uint)
-    function extractSequenceLELegacy(bytes memory _input) internal pure returns (bytes memory) {
+    function extractSequenceLELegacy(bytes memory _input) internal pure returns (bytes4) {
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
         (_varIntDataLen, _scriptSigLen) = extractScriptSigLen(_input);
         require(_varIntDataLen != ERR_BAD_ARG, "Bad VarInt in scriptSig");
-        return _input.slice(36 + 1 + _varIntDataLen + _scriptSigLen, 4);
+        return _input.slice4(36 + 1 + _varIntDataLen + _scriptSigLen);
     }
 
     /// @notice          Extracts the sequence from the input
@@ -241,9 +274,9 @@ library BTCUtils {
     /// @param _input    The LEGACY input
     /// @return          The sequence number (big-endian uint)
     function extractSequenceLegacy(bytes memory _input) internal pure returns (uint32) {
-        bytes memory _leSeqence = extractSequenceLELegacy(_input);
-        bytes memory _beSequence = reverseEndianness(_leSeqence);
-        return uint32(bytesToUint(_beSequence));
+        uint32 _leSeqence = uint32(extractSequenceLELegacy(_input));
+        uint32 _beSequence = reverseUint32(_leSeqence);
+        return _beSequence;
     }
     /// @notice          Extracts the VarInt-prepended scriptSig from the input in a tx
     /// @dev             Will return hex"00" if passed a witness input
@@ -266,8 +299,8 @@ library BTCUtils {
     /// @dev             Sequence is used for relative time locks
     /// @param _input    The WITNESS input
     /// @return          The sequence bytes (LE uint)
-    function extractSequenceLEWitness(bytes memory _input) internal pure returns (bytes memory) {
-        return _input.slice(37, 4);
+    function extractSequenceLEWitness(bytes memory _input) internal pure returns (bytes4) {
+        return _input.slice4(37);
     }
 
     /// @notice          Extracts the sequence from the input in a tx
@@ -275,9 +308,9 @@ library BTCUtils {
     /// @param _input    The WITNESS input
     /// @return          The sequence number (big-endian uint)
     function extractSequenceWitness(bytes memory _input) internal pure returns (uint32) {
-        bytes memory _leSeqence = extractSequenceLEWitness(_input);
-        bytes memory _inputeSequence = reverseEndianness(_leSeqence);
-        return uint32(bytesToUint(_inputeSequence));
+        uint32 _leSeqence = uint32(extractSequenceLEWitness(_input));
+        uint32 _inputeSequence = reverseUint32(_leSeqence);
+        return _inputeSequence;
     }
 
     /// @notice          Extracts the outpoint from the input in a tx
@@ -293,15 +326,15 @@ library BTCUtils {
     /// @param _input    The input
     /// @return          The tx id (little-endian bytes)
     function extractInputTxIdLE(bytes memory _input) internal pure returns (bytes32) {
-        return _input.slice(0, 32).toBytes32();
+        return _input.slice32(0);
     }
 
     /// @notice          Extracts the LE tx input index from the input in a tx
     /// @dev             4-byte tx index
     /// @param _input    The input
     /// @return          The tx index (little-endian bytes)
-    function extractTxIndexLE(bytes memory _input) internal pure returns (bytes memory) {
-        return _input.slice(32, 4);
+    function extractTxIndexLE(bytes memory _input) internal pure returns (bytes4) {
+        return _input.slice4(32);
     }
 
     /* ****** */
@@ -365,8 +398,8 @@ library BTCUtils {
     /// @dev             Value is an 8-byte little-endian number
     /// @param _output   The output
     /// @return          The output value as LE bytes
-    function extractValueLE(bytes memory _output) internal pure returns (bytes memory) {
-        return _output.slice(0, 8);
+    function extractValueLE(bytes memory _output) internal pure returns (bytes8) {
+        return _output.slice8(0);
     }
 
     /// @notice          Extracts the value from the output in a tx
@@ -374,9 +407,9 @@ library BTCUtils {
     /// @param _output   The output
     /// @return          The output value
     function extractValue(bytes memory _output) internal pure returns (uint64) {
-        bytes memory _leValue = extractValueLE(_output);
-        bytes memory _beValue = reverseEndianness(_leValue);
-        return uint64(bytesToUint(_beValue));
+        uint64 _leValue = uint64(extractValueLE(_output));
+        uint64 _beValue = reverseUint64(_leValue);
+        return _beValue;
     }
 
     /// @notice          Extracts the data from an op return output
@@ -387,8 +420,8 @@ library BTCUtils {
         if (_output.keccak256Slice(9, 1) != keccak256(hex"6a")) {
             return hex"";
         }
-        bytes memory _dataLen = _output.slice(10, 1);
-        return _output.slice(11, bytesToUint(_dataLen));
+        bytes1 _dataLen = _output[10];
+        return _output.slice(11, uint256(uint8(_dataLen)));
     }
 
     /// @notice          Extracts the hash from the output script
@@ -532,8 +565,8 @@ library BTCUtils {
     /// @dev             Use verifyHash256Merkle to verify proofs with this root
     /// @param _header   The header
     /// @return          The merkle root (little-endian)
-    function extractMerkleRootLE(bytes memory _header) internal pure returns (bytes memory) {
-        return _header.slice(36, 32);
+    function extractMerkleRootLE(bytes memory _header) internal pure returns (bytes32) {
+        return _header.slice32(36);
     }
 
     /// @notice          Extracts the target from a block header
@@ -563,16 +596,16 @@ library BTCUtils {
     /// @dev             Block headers do NOT include block number :(
     /// @param _header   The header
     /// @return          The previous block's hash (little-endian)
-    function extractPrevBlockLE(bytes memory _header) internal pure returns (bytes memory) {
-        return _header.slice(4, 32);
+    function extractPrevBlockLE(bytes memory _header) internal pure returns (bytes32) {
+        return _header.slice32(4);
     }
 
     /// @notice          Extracts the timestamp from a block header
     /// @dev             Time is not 100% reliable
     /// @param _header   The header
     /// @return          The timestamp (little-endian bytes)
-    function extractTimestampLE(bytes memory _header) internal pure returns (bytes memory) {
-        return _header.slice(68, 4);
+    function extractTimestampLE(bytes memory _header) internal pure returns (bytes4) {
+        return _header.slice4(68);
     }
 
     /// @notice          Extracts the timestamp from a block header
@@ -580,7 +613,7 @@ library BTCUtils {
     /// @param _header   The header
     /// @return          The timestamp (uint)
     function extractTimestamp(bytes memory _header) internal pure returns (uint32) {
-        return uint32(bytesToUint(reverseEndianness(extractTimestampLE(_header))));
+        return reverseUint32(uint32(extractTimestampLE(_header)));
     }
 
     /// @notice          Extracts the expected difficulty from a block header
@@ -621,8 +654,8 @@ library BTCUtils {
         }
 
         uint _idx = _index;
-        bytes32 _root = _proof.slice(_proof.length - 32, 32).toBytes32();
-        bytes32 _current = _proof.slice(0, 32).toBytes32();
+        bytes32 _root = _proof.slice32(_proof.length - 32);
+        bytes32 _current = _proof.slice32(0);
 
         for (uint i = 1; i < (_proof.length.div(32)) - 1; i++) {
             if (_idx % 2 == 1) {

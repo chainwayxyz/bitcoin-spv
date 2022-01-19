@@ -129,7 +129,7 @@ library ValidateSPV {
     function validateHeaderPrevHash(bytes memory _header, bytes32 _prevHeaderDigest) internal pure returns (bool) {
 
         // Extract prevHash of current header
-        bytes32 _prevHash = _header.extractPrevBlockLE().toBytes32();
+        bytes32 _prevHash = _header.extractPrevBlockLE();
 
         // Compare prevHash of current header to previous header's digest
         if (_prevHash != _prevHeaderDigest) {return false;}

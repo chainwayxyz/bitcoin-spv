@@ -270,6 +270,24 @@ library BytesLib {
         }
     }
 
+    function slice32(bytes memory _bytes, uint _start) internal pure returns (bytes32 res) {
+        assembly {
+            res := mload(add(add(_bytes, 32), _start))
+        }
+    }
+
+    function slice20(bytes memory _bytes, uint _start) internal pure returns (bytes20) {
+        return bytes20(slice32(_bytes, _start));
+    }
+
+    function slice8(bytes memory _bytes, uint _start) internal pure returns (bytes8) {
+        return bytes8(slice32(_bytes, _start));
+    }
+
+    function slice4(bytes memory _bytes, uint _start) internal pure returns (bytes4) {
+        return bytes4(slice32(_bytes, _start));
+    }
+
     function toAddress(bytes memory _bytes, uint _start) internal  pure returns (address) {
         uint _totalLen = _start + 20;
         require(_totalLen > _start && _bytes.length >= _totalLen, "Address conversion out of bounds.");
