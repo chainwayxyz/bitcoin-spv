@@ -632,6 +632,11 @@ library BTCUtils {
         return hash256(abi.encodePacked(_a, _b));
     }
 
+    function _hash256MerkleStep(bytes32 _a, bytes32 _b) internal pure returns (bytes32) {
+        return hash256(abi.encodePacked(_a, _b));
+    }
+
+
     /// @notice          Verifies a Bitcoin-style merkle tree
     /// @dev             Leaves are 0-indexed.
     /// @param _proof    The proof. Tightly packed LE sha256 hashes. The last hash is the root
@@ -659,9 +664,9 @@ library BTCUtils {
 
         for (uint i = 1; i < (_proof.length.div(32)) - 1; i++) {
             if (_idx % 2 == 1) {
-                _current = _hash256MerkleStep(_proof.slice(i * 32, 32), abi.encodePacked(_current));
+                _current = _hash256MerkleStep(_proof.slice32(i * 32), _current);
             } else {
-                _current = _hash256MerkleStep(abi.encodePacked(_current), _proof.slice(i * 32, 32));
+                _current = _hash256MerkleStep(_current, _proof.slice32(i * 32));
             }
             _idx = _idx >> 1;
         }
