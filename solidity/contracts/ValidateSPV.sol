@@ -127,7 +127,7 @@ library ValidateSPV {
     /// @return             true if header work is valid, false otherwise
     function validateHeaderWork(bytes32 _digest, uint256 _target) internal pure returns (bool) {
         if (_digest == bytes32(0)) {return false;}
-        return (abi.encodePacked(_digest).reverseEndianness().bytesToUint() < _target);
+        return (uint256(_digest).reverseUint256() < _target);
     }
 
     /// @notice                     Checks validity of header chain
