@@ -270,6 +270,36 @@ library BytesLib {
         }
     }
 
+    /// @notice Take a slice of the byte array, overwriting the destination.
+    /// The length of the slice will equal the length of the destination array.
+    /// @dev Make sure the destination array has afterspace if required.
+    /// @param _bytes The source array
+    /// @param _dest The destination array.
+    /// @param _start The location to start in the source array.
+    function sliceInPlace(
+        bytes memory _bytes,
+        bytes memory _dest,
+        uint _start
+    ) internal pure {
+        uint _length = _dest.length;
+        uint _end = _start + _length;
+        require(_end > _start && _bytes.length >= _end, "Slice out of bounds");
+
+        assembly {
+            for {
+                let src := add(add(_bytes, 32), _start)
+                let res := add(_dest, 32)
+                let end := add(src, _length)
+            } lt(src, end) {
+                src := add(src, 32)
+                res := add(res, 32)
+            } {
+                mstore(res, mload(src))
+            }
+        }
+    }
+
+    // Static slice functions, no bounds checking
     function slice32(bytes memory _bytes, uint _start) internal pure returns (bytes32 res) {
         assembly {
             res := mload(add(add(_bytes, 32), _start))

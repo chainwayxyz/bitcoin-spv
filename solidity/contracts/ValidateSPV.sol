@@ -88,10 +88,19 @@ library ValidateSPV {
 
         _totalDifficulty = 0;
 
+        bytes memory _header;
+
+        // Allocate _header with extra space after it to fit 3 full words
+        assembly {
+            _header := mload(0x40)
+            mstore(0x40, add(_header, add(32, 96)))
+            mstore(_header, 80)
+        }
+
         for (uint256 _start = 0; _start < _headers.length; _start += 80) {
 
             // ith header start index and ith header
-            bytes memory _header = _headers.slice(_start, 80);
+            _headers.sliceInPlace(_header, _start);
 
             // After the first header, check that headers are in a chain
             if (_start != 0) {
