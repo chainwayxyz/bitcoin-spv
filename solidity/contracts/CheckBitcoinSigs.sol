@@ -34,10 +34,10 @@ library CheckBitcoinSigs {
 
         if (_pubkey.length == 64) {
             _prefix = uint8(_pubkey[_pubkey.length - 1]) % 2 == 1 ? 3 : 2;
-            _compressedPubkey = abi.encodePacked(_prefix, _pubkey.slice(0, 32));
+            _compressedPubkey = abi.encodePacked(_prefix, _pubkey.slice32(0));
         } else if (_pubkey.length == 65) {
             _prefix = uint8(_pubkey[_pubkey.length - 1]) % 2 == 1 ? 3 : 2;
-            _compressedPubkey = abi.encodePacked(_prefix, _pubkey.slice(1, 32));
+            _compressedPubkey = abi.encodePacked(_prefix, _pubkey.slice32(1));
         } else {
             _compressedPubkey = _pubkey;
         }
