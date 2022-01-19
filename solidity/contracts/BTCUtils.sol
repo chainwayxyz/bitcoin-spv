@@ -118,6 +118,10 @@ library BTCUtils {
         v = (v >> 16) | (v << 16);
     }
 
+    function reverseUint24(uint24 _b) internal pure returns (uint24 v) {
+        v =  (_b << 16) | (_b & 0x00FF00) | (_b >> 16);
+    }
+
     /// @notice          Converts big-endian bytes to a uint
     /// @dev             Traverses the byte array and sums the bytes
     /// @param _b        The big-endian bytes-encoded integer
@@ -574,9 +578,9 @@ library BTCUtils {
     /// @param _header   The header
     /// @return          The target threshold
     function extractTarget(bytes memory _header) internal pure returns (uint256) {
-        bytes memory _m = _header.slice(72, 3);
+        uint24 _m = uint24(_header.slice3(72));
         uint8 _e = uint8(_header[75]);
-        uint256 _mantissa = bytesToUint(reverseEndianness(_m));
+        uint256 _mantissa = uint256(reverseUint24(_m));
         uint _exponent = _e - 3;
 
         return _mantissa * (256 ** _exponent);

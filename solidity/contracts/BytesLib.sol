@@ -288,6 +288,10 @@ library BytesLib {
         return bytes4(slice32(_bytes, _start));
     }
 
+    function slice3(bytes memory _bytes, uint _start) internal pure returns (bytes3) {
+        return bytes3(slice32(_bytes, _start));
+    }
+
     function toAddress(bytes memory _bytes, uint _start) internal  pure returns (address) {
         uint _totalLen = _start + 20;
         require(_totalLen > _start && _bytes.length >= _totalLen, "Address conversion out of bounds.");
