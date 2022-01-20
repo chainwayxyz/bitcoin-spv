@@ -245,14 +245,12 @@ library BTCUtils {
         uint256 _offset = 1 + _varIntDataLen;
 
         for (uint256 _i = 0; _i < _index; _i ++) {
-            _remaining = _vin.slice(_offset, _vin.length - _offset);
-            _len = determineInputLength(_remaining);
+            _len = determineInputLengthAt(_vin, _offset);
             require(_len != ERR_BAD_ARG, "Bad VarInt in scriptSig");
             _offset = _offset + _len;
         }
 
-        _remaining = _vin.slice(_offset, _vin.length - _offset);
-        _len = determineInputLength(_remaining);
+        _len = determineInputLengthAt(_vin, _offset);
         require(_len != ERR_BAD_ARG, "Bad VarInt in scriptSig");
         return _vin.slice(_offset, _len);
     }
@@ -270,14 +268,17 @@ library BTCUtils {
     /// @param _input    The LEGACY input
     /// @return          The length of the script sig
     function extractScriptSigLen(bytes memory _input) internal pure returns (uint256, uint256) {
-        if (_input.length < 37) {
+        return extractScriptSigLenAt(_input, 0);
+    }
+
+    function extractScriptSigLenAt(bytes memory _input, uint256 _at) internal pure returns (uint256, uint256) {
+        if (_input.length < 37 + _at) {
             return (ERR_BAD_ARG, 0);
         }
-        bytes memory _afterOutpoint = _input.slice(36, _input.length - 36);
 
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
-        (_varIntDataLen, _scriptSigLen) = parseVarInt(_afterOutpoint);
+        (_varIntDataLen, _scriptSigLen) = parseVarIntAt(_input, _at + 36);
 
         return (_varIntDataLen, _scriptSigLen);
     }
@@ -287,9 +288,13 @@ library BTCUtils {
     /// @param _input    The input
     /// @return          The length of the input in bytes
     function determineInputLength(bytes memory _input) internal pure returns (uint256) {
+        return determineInputLengthAt(_input, 0);
+    }
+
+    function determineInputLengthAt(bytes memory _input, uint256 _at) internal pure returns (uint256) {
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
-        (_varIntDataLen, _scriptSigLen) = extractScriptSigLen(_input);
+        (_varIntDataLen, _scriptSigLen) = extractScriptSigLen(_input, _at);
         if (_varIntDataLen == ERR_BAD_ARG) {
             return ERR_BAD_ARG;
         }
@@ -386,14 +391,16 @@ library BTCUtils {
     /// @param _output   The output
     /// @return          The length indicated by the prefix, error if invalid length
     function determineOutputLength(bytes memory _output) internal pure returns (uint256) {
-        if (_output.length < 9) {
+        return determineOutputLengthAt(_output, 0);
+    }
+
+    function determineOutputLengthAt(bytes memory _output, uint256 _at) internal pure returns (uint256) {
+        if (_output.length < 9 + _at) {
             return ERR_BAD_ARG;
         }
-        bytes memory _afterValue = _output.slice(8, _output.length - 8);
-
         uint256 _varIntDataLen;
         uint256 _scriptPubkeyLength;
-        (_varIntDataLen, _scriptPubkeyLength) = parseVarInt(_afterValue);
+        (_varIntDataLen, _scriptPubkeyLength) = parseVarIntAt(_output, 8 + _at);
 
         if (_varIntDataLen == ERR_BAD_ARG) {
             return ERR_BAD_ARG;
@@ -422,14 +429,12 @@ library BTCUtils {
         uint256 _offset = 1 + _varIntDataLen;
 
         for (uint256 _i = 0; _i < _index; _i ++) {
-            _remaining = _vout.slice(_offset, _vout.length - _offset);
-            _len = determineOutputLength(_remaining);
+            _len = determineOutputLengthAt(_vout, _offset);
             require(_len != ERR_BAD_ARG, "Bad VarInt in scriptPubkey");
             _offset += _len;
         }
 
-        _remaining = _vout.slice(_offset, _vout.length - _offset);
-        _len = determineOutputLength(_remaining);
+        _len = determineOutputLengthAt(_vout, _offset);
         require(_len != ERR_BAD_ARG, "Bad VarInt in scriptPubkey");
         return _vout.slice(_offset, _len);
     }
