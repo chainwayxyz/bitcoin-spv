@@ -374,12 +374,20 @@ library BTCUtils {
         return _input.slice32(0);
     }
 
+    function extractInputTxIdLeAt(bytes memory _input, uint256 _at) internal pure returns (bytes32) {
+        return _input.slice32(_at);
+    }
+
     /// @notice          Extracts the LE tx input index from the input in a tx
     /// @dev             4-byte tx index
     /// @param _input    The input
     /// @return          The tx index (little-endian bytes)
     function extractTxIndexLE(bytes memory _input) internal pure returns (bytes4) {
         return _input.slice4(32);
+    }
+
+    function extractTxIndexLeAt(bytes memory _input, uint256 _at) internal pure returns (bytes4) {
+        return _input.slice4(32 + _at);
     }
 
     /* ****** */
