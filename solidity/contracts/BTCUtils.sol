@@ -62,7 +62,14 @@ library BTCUtils {
         if (_b.length < 1 + _dataLen + _at) {
             return (ERR_BAD_ARG, 0);
         }
-        uint256 _number = bytesToUint(reverseEndianness(_b.slice(1 + _at, _dataLen)));
+        uint256 _number;
+        if (_dataLen == 2) {
+            _number = reverseUint16(uint16(_b.slice2(1 + _at)));
+        } else if (_dataLen == 4) {
+            _number = reverseUint32(uint32(_b.slice4(1 + _at)));
+        } else if (_dataLen == 8) {
+            _number = reverseUint64(uint64(_b.slice8(1 + _at)));
+        }
         return (_dataLen, _number);
     }
 
@@ -129,6 +136,11 @@ library BTCUtils {
     function reverseUint24(uint24 _b) internal pure returns (uint24 v) {
         v =  (_b << 16) | (_b & 0x00FF00) | (_b >> 16);
     }
+
+    function reverseUint16(uint16 _b) internal pure returns (uint16 v) {
+        v =  (_b << 8) | (_b >> 8);
+    }
+
 
     /// @notice          Converts big-endian bytes to a uint
     /// @dev             Traverses the byte array and sums the bytes
