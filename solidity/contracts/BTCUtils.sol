@@ -186,6 +186,22 @@ library BTCUtils {
         }
     }
 
+    /// @notice          Implements bitcoin's hash256 on a pair of bytes32
+    /// @dev             sha2 is precompiled smart contract located at address(2)
+    /// @param _a        The first bytes32 of the pre-image
+    /// @param _b        The second bytes32 of the pre-image
+    /// @return res      The digest
+    function hash256Pair(bytes32 _a, bytes32 _b) internal view returns (bytes32 res) {
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+            mstore(0x00, _a)
+            mstore(0x20, _b)
+            pop(staticcall(gas(), 2, 0x00, 64, 0x00, 32))
+            pop(staticcall(gas(), 2, 0x00, 32, 0x00, 32))
+            res := mload(0x00)
+        }
+    }
+
     /* ************ */
     /* Legacy Input */
     /* ************ */
@@ -636,8 +652,8 @@ library BTCUtils {
         return hash256(abi.encodePacked(_a, _b));
     }
 
-    function _hash256MerkleStep(bytes32 _a, bytes32 _b) internal pure returns (bytes32) {
-        return hash256(abi.encodePacked(_a, _b));
+    function _hash256MerkleStep(bytes32 _a, bytes32 _b) internal view returns (bytes32) {
+        return hash256Pair(_a, _b);
     }
 
 
@@ -646,7 +662,7 @@ library BTCUtils {
     /// @param _proof    The proof. Tightly packed LE sha256 hashes. The last hash is the root
     /// @param _index    The index of the leaf
     /// @return          true if the proof is valid, else false
-    function verifyHash256Merkle(bytes memory _proof, uint _index) internal pure returns (bool) {
+    function verifyHash256Merkle(bytes memory _proof, uint _index) internal view returns (bool) {
         // Not an even number of hashes
         if (_proof.length % 32 != 0) {
             return false;

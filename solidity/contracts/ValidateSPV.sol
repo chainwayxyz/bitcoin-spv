@@ -46,7 +46,7 @@ library ValidateSPV {
         bytes32 _merkleRoot,
         bytes memory _intermediateNodes,
         uint _index
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
         // Shortcut the empty-block case
         if (_txid == _merkleRoot && _index == 0 && _intermediateNodes.length == 0) {
             return true;

@@ -30,7 +30,7 @@ contract ValidateSPVTest {
         bytes32 _merkleRoot,
         bytes memory _proof,
         uint _index
-    ) public pure returns (bool) {
+    ) public view returns (bool) {
         return ValidateSPV.prove(_txid, _merkleRoot, _proof, _index);
     }
 

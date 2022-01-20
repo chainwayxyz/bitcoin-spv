@@ -333,7 +333,7 @@ library BTCUtilsDelegate {
     /// @param _proof    The proof. Tightly packed LE sha256 hashes. The last hash is the root
     /// @param _index    The index of the leaf
     /// @return          true if the proof is valid, else false
-    function verifyHash256Merkle(bytes memory _proof, uint _index) public pure returns (bool) {
+    function verifyHash256Merkle(bytes memory _proof, uint _index) public view returns (bool) {
         return BTCUtils.verifyHash256Merkle(_proof, _index);
     }
 
