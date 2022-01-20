@@ -548,8 +548,7 @@ library BTCUtils {
             }
 
             // Grab the next input and determine its length.
-            bytes memory _next = _vin.slice(_offset, _vin.length - _offset);
-            uint256 _nextLen = determineInputLength(_next);
+            uint256 _nextLen = determineInputLengthAt(_vin, _offset);
             if (_nextLen == ERR_BAD_ARG) {
                 return false;
             }
@@ -587,8 +586,7 @@ library BTCUtils {
 
             // Grab the next output and determine its length.
             // Increase the offset by that much
-            bytes memory _next = _vout.slice(_offset, _vout.length - _offset);
-            uint256 _nextLen = determineOutputLength(_next);
+            uint256 _nextLen = determineOutputLengthAt(_vout, _offset);
             if (_nextLen == ERR_BAD_ARG) {
                 return false;
             }
