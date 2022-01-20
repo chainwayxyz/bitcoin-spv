@@ -27,13 +27,17 @@ library BTCUtils {
     /// @param _flag    The first byte of a VarInt
     /// @return         The number of non-flag bytes in the VarInt
     function determineVarIntDataLength(bytes memory _flag) internal pure returns (uint8) {
-        if (uint8(_flag[0]) == 0xff) {
+        return determineVarIntDataLengthAt(_flag, 0);
+    }
+
+    function determineVarIntDataLengthAt(bytes memory _b, uint256 _at) internal pure returns (uint8) {
+        if (uint8(_b[_at]) == 0xff) {
             return 8;  // one-byte flag, 8 bytes data
         }
-        if (uint8(_flag[0]) == 0xfe) {
+        if (uint8(_b[_at]) == 0xfe) {
             return 4;  // one-byte flag, 4 bytes data
         }
-        if (uint8(_flag[0]) == 0xfd) {
+        if (uint8(_b[_at]) == 0xfd) {
             return 2;  // one-byte flag, 2 bytes data
         }
 
@@ -46,15 +50,19 @@ library BTCUtils {
     /// @param _b   A byte-string starting with a VarInt
     /// @return     number of bytes in the encoding (not counting the tag), the encoded int
     function parseVarInt(bytes memory _b) internal pure returns (uint256, uint256) {
-        uint8 _dataLen = determineVarIntDataLength(_b);
+        return parseVarIntAt(_b, 0);
+    }
+
+    function parseVarIntAt(bytes memory _b, uint256 _at) internal pure returns (uint256, uint256) {
+        uint8 _dataLen = determineVarIntDataLengthAt(_b, _at);
 
         if (_dataLen == 0) {
-            return (0, uint8(_b[0]));
+            return (0, uint8(_b[_at]));
         }
-        if (_b.length < 1 + _dataLen) {
+        if (_b.length < 1 + _dataLen + _at) {
             return (ERR_BAD_ARG, 0);
         }
-        uint256 _number = bytesToUint(reverseEndianness(_b.slice(1, _dataLen)));
+        uint256 _number = bytesToUint(reverseEndianness(_b.slice(1 + _at, _dataLen)));
         return (_dataLen, _number);
     }
 
