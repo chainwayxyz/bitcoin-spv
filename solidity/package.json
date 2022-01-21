@@ -2,6 +2,10 @@
   "name": "@keep-network/bitcoin-spv-sol",
   "version": "v3.1.0-solc-0.8",
   "description": "bitcoin SPV proofs in Solidity",
+  "files": [
+    "contracts/**/*.sol",
+    "migrations/scripts"
+  ],
   "scripts": {
     "compile": "truffle compile",
     "test": "cp ../testVectors.json test/ && truffle test",
