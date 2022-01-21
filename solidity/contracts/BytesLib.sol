@@ -300,28 +300,34 @@ library BytesLib {
     }
 
     // Static slice functions, no bounds checking
+    /// @notice take a 32-byte slice from the specified position
     function slice32(bytes memory _bytes, uint _start) internal pure returns (bytes32 res) {
         assembly {
             res := mload(add(add(_bytes, 32), _start))
         }
     }
 
+    /// @notice take a 20-byte slice from the specified position
     function slice20(bytes memory _bytes, uint _start) internal pure returns (bytes20) {
         return bytes20(slice32(_bytes, _start));
     }
 
+    /// @notice take a 8-byte slice from the specified position
     function slice8(bytes memory _bytes, uint _start) internal pure returns (bytes8) {
         return bytes8(slice32(_bytes, _start));
     }
 
+    /// @notice take a 4-byte slice from the specified position
     function slice4(bytes memory _bytes, uint _start) internal pure returns (bytes4) {
         return bytes4(slice32(_bytes, _start));
     }
 
+    /// @notice take a 3-byte slice from the specified position
     function slice3(bytes memory _bytes, uint _start) internal pure returns (bytes3) {
         return bytes3(slice32(_bytes, _start));
     }
 
+    /// @notice take a 2-byte slice from the specified position
     function slice2(bytes memory _bytes, uint _start) internal pure returns (bytes2) {
         return bytes2(slice32(_bytes, _start));
     }
