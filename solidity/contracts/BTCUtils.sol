@@ -294,7 +294,7 @@ library BTCUtils {
     function determineInputLengthAt(bytes memory _input, uint256 _at) internal pure returns (uint256) {
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
-        (_varIntDataLen, _scriptSigLen) = extractScriptSigLen(_input, _at);
+        (_varIntDataLen, _scriptSigLen) = extractScriptSigLenAt(_input, _at);
         if (_varIntDataLen == ERR_BAD_ARG) {
             return ERR_BAD_ARG;
         }
