@@ -30,6 +30,11 @@ library BTCUtils {
         return determineVarIntDataLengthAt(_flag, 0);
     }
 
+    /// @notice         Determines the length of a VarInt in bytes
+    /// @dev            A VarInt of >1 byte is prefixed with a flag indicating its length
+    /// @param _b       The byte array containing a VarInt
+    /// @param _at      The position of the VarInt in the array
+    /// @return         The number of non-flag bytes in the VarInt
     function determineVarIntDataLengthAt(bytes memory _b, uint256 _at) internal pure returns (uint8) {
         if (uint8(_b[_at]) == 0xff) {
             return 8;  // one-byte flag, 8 bytes data
@@ -53,6 +58,12 @@ library BTCUtils {
         return parseVarIntAt(_b, 0);
     }
 
+    /// @notice     Parse a VarInt into its data length and the number it represents
+    /// @dev        Useful for Parsing Vins and Vouts. Returns ERR_BAD_ARG if insufficient bytes.
+    ///             Caller SHOULD explicitly handle this case (or bubble it up)
+    /// @param _b   A byte-string containing a VarInt
+    /// @param _at  The position of the VarInt
+    /// @return     number of bytes in the encoding (not counting the tag), the encoded int
     function parseVarIntAt(bytes memory _b, uint256 _at) internal pure returns (uint256, uint256) {
         uint8 _dataLen = determineVarIntDataLengthAt(_b, _at);
 
@@ -110,6 +121,9 @@ library BTCUtils {
         v = (v >> 128) | (v << 128);
     }
 
+    /// @notice          Changes the endianness of a uint64
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
     function reverseUint64(uint64 _b) internal pure returns (uint64 v) {
         v = _b;
 
@@ -123,6 +137,9 @@ library BTCUtils {
         v = (v >> 32) | (v << 32);
     }
 
+    /// @notice          Changes the endianness of a uint32
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
     function reverseUint32(uint32 _b) internal pure returns (uint32 v) {
         v = _b;
 
@@ -133,10 +150,16 @@ library BTCUtils {
         v = (v >> 16) | (v << 16);
     }
 
+    /// @notice          Changes the endianness of a uint24
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
     function reverseUint24(uint24 _b) internal pure returns (uint24 v) {
         v =  (_b << 16) | (_b & 0x00FF00) | (_b >> 16);
     }
 
+    /// @notice          Changes the endianness of a uint16
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
     function reverseUint16(uint16 _b) internal pure returns (uint16 v) {
         v =  (_b << 8) | (_b >> 8);
     }
@@ -150,16 +173,6 @@ library BTCUtils {
         uint256 _number;
 
         for (uint i = 0; i < _b.length; i++) {
-            _number = _number + uint8(_b[i]) * (2 ** (8 * (_b.length - (i + 1))));
-        }
-
-        return _number;
-    }
-
-    function bytesToUint(bytes4 _b) internal pure returns (uint256) {
-        uint256 _number;
-
-        for (uint i = 0; i < 4; i++) {
             _number = _number + uint8(_b[i]) * (2 ** (8 * (_b.length - (i + 1))));
         }
 
@@ -271,6 +284,12 @@ library BTCUtils {
         return extractScriptSigLenAt(_input, 0);
     }
 
+    /// @notice          Determines the length of a scriptSig in an input
+    ///                  starting at the specified position
+    /// @dev             Will return 0 if passed a witness input.
+    /// @param _input    The byte array containing the LEGACY input
+    /// @param _at       The position of the input in the array
+    /// @return          The length of the script sig
     function extractScriptSigLenAt(bytes memory _input, uint256 _at) internal pure returns (uint256, uint256) {
         if (_input.length < 37 + _at) {
             return (ERR_BAD_ARG, 0);
@@ -291,6 +310,12 @@ library BTCUtils {
         return determineInputLengthAt(_input, 0);
     }
 
+    /// @notice          Determines the length of an input from its scriptSig,
+    ///                  starting at the specified position
+    /// @dev             36 for outpoint, 1 for scriptSig length, 4 for sequence
+    /// @param _input    The byte array containing the input
+    /// @param _at       The position of the input in the array
+    /// @return          The length of the input in bytes
     function determineInputLengthAt(bytes memory _input, uint256 _at) internal pure returns (uint256) {
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
@@ -374,6 +399,12 @@ library BTCUtils {
         return _input.slice32(0);
     }
 
+    /// @notice          Extracts the outpoint tx id from an input
+    ///                  starting at the specified position
+    /// @dev             32-byte tx id
+    /// @param _input    The byte array containing the input
+    /// @param _at       The position of the input
+    /// @return          The tx id (little-endian bytes)
     function extractInputTxIdLeAt(bytes memory _input, uint256 _at) internal pure returns (bytes32) {
         return _input.slice32(_at);
     }
@@ -386,6 +417,12 @@ library BTCUtils {
         return _input.slice4(32);
     }
 
+    /// @notice          Extracts the LE tx input index from the input in a tx
+    ///                  starting at the specified position
+    /// @dev             4-byte tx index
+    /// @param _input    The byte array containing the input
+    /// @param _at       The position of the input
+    /// @return          The tx index (little-endian bytes)
     function extractTxIndexLeAt(bytes memory _input, uint256 _at) internal pure returns (bytes4) {
         return _input.slice4(32 + _at);
     }
@@ -402,6 +439,12 @@ library BTCUtils {
         return determineOutputLengthAt(_output, 0);
     }
 
+    /// @notice          Determines the length of an output
+    ///                  starting at the specified position
+    /// @dev             Works with any properly formatted output
+    /// @param _output   The byte array containing the output
+    /// @param _at       The position of the output
+    /// @return          The length indicated by the prefix, error if invalid length
     function determineOutputLengthAt(bytes memory _output, uint256 _at) internal pure returns (uint256) {
         if (_output.length < 9 + _at) {
             return ERR_BAD_ARG;
@@ -683,6 +726,10 @@ library BTCUtils {
         return hash256(abi.encodePacked(_a, _b));
     }
 
+    /// @notice          Concatenates and hashes two inputs for merkle proving
+    /// @param _a        The first hash
+    /// @param _b        The second hash
+    /// @return          The double-sha256 of the concatenated hashes
     function _hash256MerkleStep(bytes32 _a, bytes32 _b) internal view returns (bytes32) {
         return hash256Pair(_a, _b);
     }
