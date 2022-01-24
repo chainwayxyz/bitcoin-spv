@@ -43,10 +43,10 @@ library ValidateSPVDelegate {
     /// @ param _locktime   4-byte tx locktime
     /// @return             32-byte transaction id, little endian
     function calculateTxId(
-        bytes memory _version,
+        bytes4 _version,
         bytes memory _vin,
         bytes memory _vout,
-        bytes memory _locktime
+        bytes4 _locktime
     ) public view returns (bytes32) {
         return ValidateSPV.calculateTxId(_version, _vin, _vout, _locktime);
     }

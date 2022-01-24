@@ -66,13 +66,13 @@ library ValidateSPV {
     /// @param _version     4-bytes version
     /// @param _vin         Raw bytes length-prefixed input vector
     /// @param _vout        Raw bytes length-prefixed output vector
-    /// @param _locktime   4-byte tx locktime
+    /// @param _locktime    4-byte tx locktime
     /// @return             32-byte transaction id, little endian
     function calculateTxId(
-        bytes memory _version,
+        bytes4 _version,
         bytes memory _vin,
         bytes memory _vout,
-        bytes memory _locktime
+        bytes4 _locktime
     ) internal view returns (bytes32) {
         // Get transaction hash double-Sha256(version + nIns + inputs + nOuts + outputs + locktime)
         return abi.encodePacked(_version, _vin, _vout, _locktime).hash256View();
