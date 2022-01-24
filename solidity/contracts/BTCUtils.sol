@@ -212,10 +212,9 @@ library BTCUtils {
     function hash256View(bytes memory _b) internal view returns (bytes32 res) {
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            let ptr := mload(0x40)
-            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), ptr, 32))
-            pop(staticcall(gas(), 2, ptr, 32, ptr, 32))
-            res := mload(ptr)
+            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), 0x00, 32))
+            pop(staticcall(gas(), 2, 0x00, 32, 0x00, 32))
+            res := mload(0x00)
         }
     }
 
