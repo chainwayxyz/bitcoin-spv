@@ -721,8 +721,8 @@ library BTCUtils {
     /// @param _a        The first hash
     /// @param _b        The second hash
     /// @return          The double-sha256 of the concatenated hashes
-    function _hash256MerkleStep(bytes memory _a, bytes memory _b) internal pure returns (bytes32) {
-        return hash256(abi.encodePacked(_a, _b));
+    function _hash256MerkleStep(bytes memory _a, bytes memory _b) internal view returns (bytes32) {
+        return hash256View(abi.encodePacked(_a, _b));
     }
 
     /// @notice          Concatenates and hashes two inputs for merkle proving
@@ -735,7 +735,7 @@ library BTCUtils {
 
 
     /// @notice          Verifies a Bitcoin-style merkle tree
-    /// @dev             Leaves are 0-indexed.
+    /// @dev             Leaves are 0-indexed. Inefficient version.
     /// @param _proof    The proof. Tightly packed LE sha256 hashes. The last hash is the root
     /// @param _index    The index of the leaf
     /// @return          true if the proof is valid, else false
@@ -755,15 +755,46 @@ library BTCUtils {
             return false;
         }
 
-        uint _idx = _index;
         bytes32 _root = _proof.slice32(_proof.length - 32);
         bytes32 _current = _proof.slice32(0);
+        bytes _tree = _proof.slice(32, _proof.length - 64);
 
-        for (uint i = 1; i < (_proof.length.div(32)) - 1; i++) {
+        return verifyHash256Merkle(_current, _tree, _root, _index);
+    }
+
+    /// @notice          Verifies a Bitcoin-style merkle tree
+    /// @dev             Leaves are 0-indexed. Efficient version.
+    /// @param _leaf     The leaf of the proof. LE sha256 hash.
+    /// @param _tree     The intermediate nodes in the proof.
+    ///                  Tightly packed LE sha256 hashes.
+    /// @param _root     The root of the proof. LE sha256 hash.
+    /// @param _index    The index of the leaf
+    /// @return          true if the proof is valid, else false
+    function verifyHash256Merkle(
+        bytes32 _leaf,
+        bytes memory _tree,
+        bytes32 _root,
+        uint _index
+    ) internal view returns (bool) {
+        // Not an even number of hashes
+        if (_tree.length % 32 != 0) {
+            return false;
+        }
+
+        // Should never occur
+        if (_tree.length == 0) {
+            return false;
+        }
+
+        uint _idx = _index;
+        bytes32 _current = _leaf;
+
+        // i moves in increments of 32
+        for (uint i = 0; i < _tree.length; i += 32) {
             if (_idx % 2 == 1) {
-                _current = _hash256MerkleStep(_proof.slice32(i * 32), _current);
+                _current = _hash256MerkleStep(_tree.slice32(i), _current);
             } else {
-                _current = _hash256MerkleStep(_current, _proof.slice32(i * 32));
+                _current = _hash256MerkleStep(_current, _tree.slice32(i));
             }
             _idx = _idx >> 1;
         }

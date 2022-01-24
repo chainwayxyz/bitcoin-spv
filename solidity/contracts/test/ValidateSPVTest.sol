@@ -46,7 +46,7 @@ contract ValidateSPVTest {
         bytes memory _vin,
         bytes memory _vout,
         bytes memory _locktime
-    ) public pure returns (bytes32) {
+    ) public view returns (bytes32) {
         return ValidateSPV.calculateTxId(_version, _vin, _vout, _locktime);
     }
 

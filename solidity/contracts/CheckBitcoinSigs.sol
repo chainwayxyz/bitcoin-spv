@@ -133,7 +133,7 @@ library CheckBitcoinSigs {
         bytes8 _inputValue,      // 8-byte LE
         bytes8 _outputValue,     // 8-byte LE
         bytes memory _outputScript    // lenght-prefixed output script
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         // Fixes elements to easily make a 1-in 1-out sighash digest
         // Does not support timelocks
         bytes memory _scriptCode = abi.encodePacked(
@@ -142,10 +142,10 @@ library CheckBitcoinSigs {
             hex"88ac");  // equal, checksig
         bytes32 _hashOutputs = abi.encodePacked(
             _outputValue,  // 8-byte LE
-            _outputScript).hash256();
+            _outputScript).hash256View();
         bytes memory _sighashPreimage = abi.encodePacked(
             hex"01000000",  // version
-            _outpoint.hash256(),  // hashPrevouts
+            _outpoint.hash256View(),  // hashPrevouts
             hex"8cb9012517c817fead650287d61bdd9c68803b6bf9c64133dcab3e65b5a50cb9",  // hashSequence(00000000)
             _outpoint,  // outpoint
             _scriptCode,  // p2wpkh script code
@@ -155,7 +155,7 @@ library CheckBitcoinSigs {
             hex"00000000",  // nLockTime
             hex"01000000"  // SIGHASH_ALL
         );
-        return _sighashPreimage.hash256();
+        return _sighashPreimage.hash256View();
     }
 
     /// @notice                 calculates the signature hash of a Bitcoin transaction with the provided details

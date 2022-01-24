@@ -52,9 +52,13 @@ library ValidateSPV {
             return true;
         }
 
-        bytes memory _proof = abi.encodePacked(_txid, _intermediateNodes, _merkleRoot);
         // If the Merkle proof failed, bubble up error
-        return _proof.verifyHash256Merkle(_index);
+        return verifyHash256Merkle(
+            _txid,
+            _intermediateNodes,
+            _merkleRoot,
+            _index
+        );
     }
 
     /// @notice             Hashes transaction to get txid
@@ -69,9 +73,9 @@ library ValidateSPV {
         bytes memory _vin,
         bytes memory _vout,
         bytes memory _locktime
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         // Get transaction hash double-Sha256(version + nIns + inputs + nOuts + outputs + locktime)
-        return abi.encodePacked(_version, _vin, _vout, _locktime).hash256();
+        return abi.encodePacked(_version, _vin, _vout, _locktime).hash256View();
     }
 
     /// @notice                  Checks validity of header chain
