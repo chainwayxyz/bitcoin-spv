@@ -1,0 +1,30 @@
+name: NPM
+
+on:
+  push:
+    branches:
+      - releases/mainnet/solidity/**
+    paths:
+      - "solidity/package.json"
+  workflow_dispatch:
+
+jobs:
+  npm-publish-contracts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./solidity
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14.x"
+          cache: "npm"
+          cache-dependency-path: solidity/package-lock.json
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access=public
