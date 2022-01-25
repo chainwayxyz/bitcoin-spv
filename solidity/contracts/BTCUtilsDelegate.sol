@@ -109,7 +109,7 @@ library BTCUtilsDelegate {
     /// @dev             Sequence is used for relative time locks
     /// @param _input    The LEGACY input
     /// @return          The sequence bytes (LE uint)
-    function extractSequenceLELegacy(bytes memory _input) public pure returns (bytes memory) {
+    function extractSequenceLELegacy(bytes memory _input) public pure returns (bytes4) {
         return BTCUtils.extractSequenceLELegacy(_input);
     }
 
@@ -145,7 +145,7 @@ library BTCUtilsDelegate {
     /// @dev             Sequence is used for relative time locks
     /// @param _input    The WITNESS input
     /// @return          The sequence bytes (LE uint)
-    function extractSequenceLEWitness(bytes memory _input) public pure returns (bytes memory) {
+    function extractSequenceLEWitness(bytes memory _input) public pure returns (bytes4) {
         return BTCUtils.extractSequenceLEWitness(_input);
     }
 
@@ -179,7 +179,7 @@ library BTCUtilsDelegate {
     /// @dev             4 byte tx index
     /// @param _input    The input
     /// @return          The tx index (little-endian bytes)
-    function extractTxIndexLE(bytes memory _input) public pure returns (bytes memory) {
+    function extractTxIndexLE(bytes memory _input) public pure returns (bytes4) {
         return BTCUtils.extractTxIndexLE(_input);
     }
 
@@ -208,7 +208,7 @@ library BTCUtilsDelegate {
     /// @dev             Value is an 8-byte little-endian number
     /// @param _output   The output
     /// @return          The output value as LE bytes
-    function extractValueLE(bytes memory _output) public pure returns (bytes memory) {
+    function extractValueLE(bytes memory _output) public pure returns (bytes8) {
         return BTCUtils.extractValueLE(_output);
     }
 
@@ -267,7 +267,7 @@ library BTCUtilsDelegate {
     /// @dev             Use verifyHash256Merkle to verify proofs with this root
     /// @param _header   The header
     /// @return          The merkle root (little-endian)
-    function extractMerkleRootLE(bytes memory _header) public pure returns (bytes memory) {
+    function extractMerkleRootLE(bytes memory _header) public pure returns (bytes32) {
         return BTCUtils.extractMerkleRootLE(_header);
     }
 
@@ -292,7 +292,7 @@ library BTCUtilsDelegate {
     /// @dev             Block headers do NOT include block number :(
     /// @param _header   The header
     /// @return          The previous block's hash (little-endian)
-    function extractPrevBlockLE(bytes memory _header) public pure returns (bytes memory) {
+    function extractPrevBlockLE(bytes memory _header) public pure returns (bytes32) {
         return BTCUtils.extractPrevBlockLE(_header);
     }
 
@@ -300,7 +300,7 @@ library BTCUtilsDelegate {
     /// @dev             Time is not 100% reliable
     /// @param _header   The header
     /// @return          The timestamp (little-endian bytes)
-    function extractTimestampLE(bytes memory _header) public pure returns (bytes memory) {
+    function extractTimestampLE(bytes memory _header) public pure returns (bytes4) {
         return BTCUtils.extractTimestampLE(_header);
     }
 
@@ -333,7 +333,7 @@ library BTCUtilsDelegate {
     /// @param _proof    The proof. Tightly packed LE sha256 hashes. The last hash is the root
     /// @param _index    The index of the leaf
     /// @return          true if the proof is valid, else false
-    function verifyHash256Merkle(bytes memory _proof, uint _index) public pure returns (bool) {
+    function verifyHash256Merkle(bytes memory _proof, uint _index) public view returns (bool) {
         return BTCUtils.verifyHash256Merkle(_proof, _index);
     }
 

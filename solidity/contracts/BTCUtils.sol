@@ -27,13 +27,22 @@ library BTCUtils {
     /// @param _flag    The first byte of a VarInt
     /// @return         The number of non-flag bytes in the VarInt
     function determineVarIntDataLength(bytes memory _flag) internal pure returns (uint8) {
-        if (uint8(_flag[0]) == 0xff) {
+        return determineVarIntDataLengthAt(_flag, 0);
+    }
+
+    /// @notice         Determines the length of a VarInt in bytes
+    /// @dev            A VarInt of >1 byte is prefixed with a flag indicating its length
+    /// @param _b       The byte array containing a VarInt
+    /// @param _at      The position of the VarInt in the array
+    /// @return         The number of non-flag bytes in the VarInt
+    function determineVarIntDataLengthAt(bytes memory _b, uint256 _at) internal pure returns (uint8) {
+        if (uint8(_b[_at]) == 0xff) {
             return 8;  // one-byte flag, 8 bytes data
         }
-        if (uint8(_flag[0]) == 0xfe) {
+        if (uint8(_b[_at]) == 0xfe) {
             return 4;  // one-byte flag, 4 bytes data
         }
-        if (uint8(_flag[0]) == 0xfd) {
+        if (uint8(_b[_at]) == 0xfd) {
             return 2;  // one-byte flag, 2 bytes data
         }
 
@@ -46,15 +55,32 @@ library BTCUtils {
     /// @param _b   A byte-string starting with a VarInt
     /// @return     number of bytes in the encoding (not counting the tag), the encoded int
     function parseVarInt(bytes memory _b) internal pure returns (uint256, uint256) {
-        uint8 _dataLen = determineVarIntDataLength(_b);
+        return parseVarIntAt(_b, 0);
+    }
+
+    /// @notice     Parse a VarInt into its data length and the number it represents
+    /// @dev        Useful for Parsing Vins and Vouts. Returns ERR_BAD_ARG if insufficient bytes.
+    ///             Caller SHOULD explicitly handle this case (or bubble it up)
+    /// @param _b   A byte-string containing a VarInt
+    /// @param _at  The position of the VarInt
+    /// @return     number of bytes in the encoding (not counting the tag), the encoded int
+    function parseVarIntAt(bytes memory _b, uint256 _at) internal pure returns (uint256, uint256) {
+        uint8 _dataLen = determineVarIntDataLengthAt(_b, _at);
 
         if (_dataLen == 0) {
-            return (0, uint8(_b[0]));
+            return (0, uint8(_b[_at]));
         }
-        if (_b.length < 1 + _dataLen) {
+        if (_b.length < 1 + _dataLen + _at) {
             return (ERR_BAD_ARG, 0);
         }
-        uint256 _number = bytesToUint(reverseEndianness(_b.slice(1, _dataLen)));
+        uint256 _number;
+        if (_dataLen == 2) {
+            _number = reverseUint16(uint16(_b.slice2(1 + _at)));
+        } else if (_dataLen == 4) {
+            _number = reverseUint32(uint32(_b.slice4(1 + _at)));
+        } else if (_dataLen == 8) {
+            _number = reverseUint64(uint64(_b.slice8(1 + _at)));
+        }
         return (_dataLen, _number);
     }
 
@@ -94,6 +120,50 @@ library BTCUtils {
         // swap 16-byte long pairs
         v = (v >> 128) | (v << 128);
     }
+
+    /// @notice          Changes the endianness of a uint64
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
+    function reverseUint64(uint64 _b) internal pure returns (uint64 v) {
+        v = _b;
+
+        // swap bytes
+        v = ((v >> 8) & 0x00FF00FF00FF00FF) |
+            ((v & 0x00FF00FF00FF00FF) << 8);
+        // swap 2-byte long pairs
+        v = ((v >> 16) & 0x0000FFFF0000FFFF) |
+            ((v & 0x0000FFFF0000FFFF) << 16);
+        // swap 4-byte long pairs
+        v = (v >> 32) | (v << 32);
+    }
+
+    /// @notice          Changes the endianness of a uint32
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
+    function reverseUint32(uint32 _b) internal pure returns (uint32 v) {
+        v = _b;
+
+        // swap bytes
+        v = ((v >> 8) & 0x00FF00FF) |
+            ((v & 0x00FF00FF) << 8);
+        // swap 2-byte long pairs
+        v = (v >> 16) | (v << 16);
+    }
+
+    /// @notice          Changes the endianness of a uint24
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
+    function reverseUint24(uint24 _b) internal pure returns (uint24 v) {
+        v =  (_b << 16) | (_b & 0x00FF00) | (_b >> 16);
+    }
+
+    /// @notice          Changes the endianness of a uint16
+    /// @param _b        The unsigned integer to reverse
+    /// @return v        The reversed value
+    function reverseUint16(uint16 _b) internal pure returns (uint16 v) {
+        v =  (_b << 8) | (_b >> 8);
+    }
+
 
     /// @notice          Converts big-endian bytes to a uint
     /// @dev             Traverses the byte array and sums the bytes
@@ -142,10 +212,25 @@ library BTCUtils {
     function hash256View(bytes memory _b) internal view returns (bytes32 res) {
         // solium-disable-next-line security/no-inline-assembly
         assembly {
-            let ptr := mload(0x40)
-            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), ptr, 32))
-            pop(staticcall(gas(), 2, ptr, 32, ptr, 32))
-            res := mload(ptr)
+            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), 0x00, 32))
+            pop(staticcall(gas(), 2, 0x00, 32, 0x00, 32))
+            res := mload(0x00)
+        }
+    }
+
+    /// @notice          Implements bitcoin's hash256 on a pair of bytes32
+    /// @dev             sha2 is precompiled smart contract located at address(2)
+    /// @param _a        The first bytes32 of the pre-image
+    /// @param _b        The second bytes32 of the pre-image
+    /// @return res      The digest
+    function hash256Pair(bytes32 _a, bytes32 _b) internal view returns (bytes32 res) {
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+            mstore(0x00, _a)
+            mstore(0x20, _b)
+            pop(staticcall(gas(), 2, 0x00, 64, 0x00, 32))
+            pop(staticcall(gas(), 2, 0x00, 32, 0x00, 32))
+            res := mload(0x00)
         }
     }
 
@@ -172,14 +257,12 @@ library BTCUtils {
         uint256 _offset = 1 + _varIntDataLen;
 
         for (uint256 _i = 0; _i < _index; _i ++) {
-            _remaining = _vin.slice(_offset, _vin.length - _offset);
-            _len = determineInputLength(_remaining);
+            _len = determineInputLengthAt(_vin, _offset);
             require(_len != ERR_BAD_ARG, "Bad VarInt in scriptSig");
             _offset = _offset + _len;
         }
 
-        _remaining = _vin.slice(_offset, _vin.length - _offset);
-        _len = determineInputLength(_remaining);
+        _len = determineInputLengthAt(_vin, _offset);
         require(_len != ERR_BAD_ARG, "Bad VarInt in scriptSig");
         return _vin.slice(_offset, _len);
     }
@@ -197,14 +280,23 @@ library BTCUtils {
     /// @param _input    The LEGACY input
     /// @return          The length of the script sig
     function extractScriptSigLen(bytes memory _input) internal pure returns (uint256, uint256) {
-        if (_input.length < 37) {
+        return extractScriptSigLenAt(_input, 0);
+    }
+
+    /// @notice          Determines the length of a scriptSig in an input
+    ///                  starting at the specified position
+    /// @dev             Will return 0 if passed a witness input.
+    /// @param _input    The byte array containing the LEGACY input
+    /// @param _at       The position of the input in the array
+    /// @return          The length of the script sig
+    function extractScriptSigLenAt(bytes memory _input, uint256 _at) internal pure returns (uint256, uint256) {
+        if (_input.length < 37 + _at) {
             return (ERR_BAD_ARG, 0);
         }
-        bytes memory _afterOutpoint = _input.slice(36, _input.length - 36);
 
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
-        (_varIntDataLen, _scriptSigLen) = parseVarInt(_afterOutpoint);
+        (_varIntDataLen, _scriptSigLen) = parseVarIntAt(_input, _at + 36);
 
         return (_varIntDataLen, _scriptSigLen);
     }
@@ -214,9 +306,19 @@ library BTCUtils {
     /// @param _input    The input
     /// @return          The length of the input in bytes
     function determineInputLength(bytes memory _input) internal pure returns (uint256) {
+        return determineInputLengthAt(_input, 0);
+    }
+
+    /// @notice          Determines the length of an input from its scriptSig,
+    ///                  starting at the specified position
+    /// @dev             36 for outpoint, 1 for scriptSig length, 4 for sequence
+    /// @param _input    The byte array containing the input
+    /// @param _at       The position of the input in the array
+    /// @return          The length of the input in bytes
+    function determineInputLengthAt(bytes memory _input, uint256 _at) internal pure returns (uint256) {
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
-        (_varIntDataLen, _scriptSigLen) = extractScriptSigLen(_input);
+        (_varIntDataLen, _scriptSigLen) = extractScriptSigLenAt(_input, _at);
         if (_varIntDataLen == ERR_BAD_ARG) {
             return ERR_BAD_ARG;
         }
@@ -228,12 +330,12 @@ library BTCUtils {
     /// @dev             Sequence is used for relative time locks
     /// @param _input    The LEGACY input
     /// @return          The sequence bytes (LE uint)
-    function extractSequenceLELegacy(bytes memory _input) internal pure returns (bytes memory) {
+    function extractSequenceLELegacy(bytes memory _input) internal pure returns (bytes4) {
         uint256 _varIntDataLen;
         uint256 _scriptSigLen;
         (_varIntDataLen, _scriptSigLen) = extractScriptSigLen(_input);
         require(_varIntDataLen != ERR_BAD_ARG, "Bad VarInt in scriptSig");
-        return _input.slice(36 + 1 + _varIntDataLen + _scriptSigLen, 4);
+        return _input.slice4(36 + 1 + _varIntDataLen + _scriptSigLen);
     }
 
     /// @notice          Extracts the sequence from the input
@@ -241,9 +343,9 @@ library BTCUtils {
     /// @param _input    The LEGACY input
     /// @return          The sequence number (big-endian uint)
     function extractSequenceLegacy(bytes memory _input) internal pure returns (uint32) {
-        bytes memory _leSeqence = extractSequenceLELegacy(_input);
-        bytes memory _beSequence = reverseEndianness(_leSeqence);
-        return uint32(bytesToUint(_beSequence));
+        uint32 _leSeqence = uint32(extractSequenceLELegacy(_input));
+        uint32 _beSequence = reverseUint32(_leSeqence);
+        return _beSequence;
     }
     /// @notice          Extracts the VarInt-prepended scriptSig from the input in a tx
     /// @dev             Will return hex"00" if passed a witness input
@@ -266,8 +368,8 @@ library BTCUtils {
     /// @dev             Sequence is used for relative time locks
     /// @param _input    The WITNESS input
     /// @return          The sequence bytes (LE uint)
-    function extractSequenceLEWitness(bytes memory _input) internal pure returns (bytes memory) {
-        return _input.slice(37, 4);
+    function extractSequenceLEWitness(bytes memory _input) internal pure returns (bytes4) {
+        return _input.slice4(37);
     }
 
     /// @notice          Extracts the sequence from the input in a tx
@@ -275,9 +377,9 @@ library BTCUtils {
     /// @param _input    The WITNESS input
     /// @return          The sequence number (big-endian uint)
     function extractSequenceWitness(bytes memory _input) internal pure returns (uint32) {
-        bytes memory _leSeqence = extractSequenceLEWitness(_input);
-        bytes memory _inputeSequence = reverseEndianness(_leSeqence);
-        return uint32(bytesToUint(_inputeSequence));
+        uint32 _leSeqence = uint32(extractSequenceLEWitness(_input));
+        uint32 _inputeSequence = reverseUint32(_leSeqence);
+        return _inputeSequence;
     }
 
     /// @notice          Extracts the outpoint from the input in a tx
@@ -293,15 +395,35 @@ library BTCUtils {
     /// @param _input    The input
     /// @return          The tx id (little-endian bytes)
     function extractInputTxIdLE(bytes memory _input) internal pure returns (bytes32) {
-        return _input.slice(0, 32).toBytes32();
+        return _input.slice32(0);
+    }
+
+    /// @notice          Extracts the outpoint tx id from an input
+    ///                  starting at the specified position
+    /// @dev             32-byte tx id
+    /// @param _input    The byte array containing the input
+    /// @param _at       The position of the input
+    /// @return          The tx id (little-endian bytes)
+    function extractInputTxIdLeAt(bytes memory _input, uint256 _at) internal pure returns (bytes32) {
+        return _input.slice32(_at);
     }
 
     /// @notice          Extracts the LE tx input index from the input in a tx
     /// @dev             4-byte tx index
     /// @param _input    The input
     /// @return          The tx index (little-endian bytes)
-    function extractTxIndexLE(bytes memory _input) internal pure returns (bytes memory) {
-        return _input.slice(32, 4);
+    function extractTxIndexLE(bytes memory _input) internal pure returns (bytes4) {
+        return _input.slice4(32);
+    }
+
+    /// @notice          Extracts the LE tx input index from the input in a tx
+    ///                  starting at the specified position
+    /// @dev             4-byte tx index
+    /// @param _input    The byte array containing the input
+    /// @param _at       The position of the input
+    /// @return          The tx index (little-endian bytes)
+    function extractTxIndexLeAt(bytes memory _input, uint256 _at) internal pure returns (bytes4) {
+        return _input.slice4(32 + _at);
     }
 
     /* ****** */
@@ -313,14 +435,22 @@ library BTCUtils {
     /// @param _output   The output
     /// @return          The length indicated by the prefix, error if invalid length
     function determineOutputLength(bytes memory _output) internal pure returns (uint256) {
-        if (_output.length < 9) {
+        return determineOutputLengthAt(_output, 0);
+    }
+
+    /// @notice          Determines the length of an output
+    ///                  starting at the specified position
+    /// @dev             Works with any properly formatted output
+    /// @param _output   The byte array containing the output
+    /// @param _at       The position of the output
+    /// @return          The length indicated by the prefix, error if invalid length
+    function determineOutputLengthAt(bytes memory _output, uint256 _at) internal pure returns (uint256) {
+        if (_output.length < 9 + _at) {
             return ERR_BAD_ARG;
         }
-        bytes memory _afterValue = _output.slice(8, _output.length - 8);
-
         uint256 _varIntDataLen;
         uint256 _scriptPubkeyLength;
-        (_varIntDataLen, _scriptPubkeyLength) = parseVarInt(_afterValue);
+        (_varIntDataLen, _scriptPubkeyLength) = parseVarIntAt(_output, 8 + _at);
 
         if (_varIntDataLen == ERR_BAD_ARG) {
             return ERR_BAD_ARG;
@@ -349,14 +479,12 @@ library BTCUtils {
         uint256 _offset = 1 + _varIntDataLen;
 
         for (uint256 _i = 0; _i < _index; _i ++) {
-            _remaining = _vout.slice(_offset, _vout.length - _offset);
-            _len = determineOutputLength(_remaining);
+            _len = determineOutputLengthAt(_vout, _offset);
             require(_len != ERR_BAD_ARG, "Bad VarInt in scriptPubkey");
             _offset += _len;
         }
 
-        _remaining = _vout.slice(_offset, _vout.length - _offset);
-        _len = determineOutputLength(_remaining);
+        _len = determineOutputLengthAt(_vout, _offset);
         require(_len != ERR_BAD_ARG, "Bad VarInt in scriptPubkey");
         return _vout.slice(_offset, _len);
     }
@@ -365,8 +493,8 @@ library BTCUtils {
     /// @dev             Value is an 8-byte little-endian number
     /// @param _output   The output
     /// @return          The output value as LE bytes
-    function extractValueLE(bytes memory _output) internal pure returns (bytes memory) {
-        return _output.slice(0, 8);
+    function extractValueLE(bytes memory _output) internal pure returns (bytes8) {
+        return _output.slice8(0);
     }
 
     /// @notice          Extracts the value from the output in a tx
@@ -374,9 +502,9 @@ library BTCUtils {
     /// @param _output   The output
     /// @return          The output value
     function extractValue(bytes memory _output) internal pure returns (uint64) {
-        bytes memory _leValue = extractValueLE(_output);
-        bytes memory _beValue = reverseEndianness(_leValue);
-        return uint64(bytesToUint(_beValue));
+        uint64 _leValue = uint64(extractValueLE(_output));
+        uint64 _beValue = reverseUint64(_leValue);
+        return _beValue;
     }
 
     /// @notice          Extracts the data from an op return output
@@ -387,8 +515,8 @@ library BTCUtils {
         if (_output.keccak256Slice(9, 1) != keccak256(hex"6a")) {
             return hex"";
         }
-        bytes memory _dataLen = _output.slice(10, 1);
-        return _output.slice(11, bytesToUint(_dataLen));
+        bytes1 _dataLen = _output[10];
+        return _output.slice(11, uint256(uint8(_dataLen)));
     }
 
     /// @notice          Extracts the hash from the output script
@@ -470,8 +598,7 @@ library BTCUtils {
             }
 
             // Grab the next input and determine its length.
-            bytes memory _next = _vin.slice(_offset, _vin.length - _offset);
-            uint256 _nextLen = determineInputLength(_next);
+            uint256 _nextLen = determineInputLengthAt(_vin, _offset);
             if (_nextLen == ERR_BAD_ARG) {
                 return false;
             }
@@ -509,8 +636,7 @@ library BTCUtils {
 
             // Grab the next output and determine its length.
             // Increase the offset by that much
-            bytes memory _next = _vout.slice(_offset, _vout.length - _offset);
-            uint256 _nextLen = determineOutputLength(_next);
+            uint256 _nextLen = determineOutputLengthAt(_vout, _offset);
             if (_nextLen == ERR_BAD_ARG) {
                 return false;
             }
@@ -532,8 +658,8 @@ library BTCUtils {
     /// @dev             Use verifyHash256Merkle to verify proofs with this root
     /// @param _header   The header
     /// @return          The merkle root (little-endian)
-    function extractMerkleRootLE(bytes memory _header) internal pure returns (bytes memory) {
-        return _header.slice(36, 32);
+    function extractMerkleRootLE(bytes memory _header) internal pure returns (bytes32) {
+        return _header.slice32(36);
     }
 
     /// @notice          Extracts the target from a block header
@@ -541,9 +667,9 @@ library BTCUtils {
     /// @param _header   The header
     /// @return          The target threshold
     function extractTarget(bytes memory _header) internal pure returns (uint256) {
-        bytes memory _m = _header.slice(72, 3);
+        uint24 _m = uint24(_header.slice3(72));
         uint8 _e = uint8(_header[75]);
-        uint256 _mantissa = bytesToUint(reverseEndianness(_m));
+        uint256 _mantissa = uint256(reverseUint24(_m));
         uint _exponent = _e - 3;
 
         return _mantissa * (256 ** _exponent);
@@ -563,16 +689,16 @@ library BTCUtils {
     /// @dev             Block headers do NOT include block number :(
     /// @param _header   The header
     /// @return          The previous block's hash (little-endian)
-    function extractPrevBlockLE(bytes memory _header) internal pure returns (bytes memory) {
-        return _header.slice(4, 32);
+    function extractPrevBlockLE(bytes memory _header) internal pure returns (bytes32) {
+        return _header.slice32(4);
     }
 
     /// @notice          Extracts the timestamp from a block header
     /// @dev             Time is not 100% reliable
     /// @param _header   The header
     /// @return          The timestamp (little-endian bytes)
-    function extractTimestampLE(bytes memory _header) internal pure returns (bytes memory) {
-        return _header.slice(68, 4);
+    function extractTimestampLE(bytes memory _header) internal pure returns (bytes4) {
+        return _header.slice4(68);
     }
 
     /// @notice          Extracts the timestamp from a block header
@@ -580,7 +706,7 @@ library BTCUtils {
     /// @param _header   The header
     /// @return          The timestamp (uint)
     function extractTimestamp(bytes memory _header) internal pure returns (uint32) {
-        return uint32(bytesToUint(reverseEndianness(extractTimestampLE(_header))));
+        return reverseUint32(uint32(extractTimestampLE(_header)));
     }
 
     /// @notice          Extracts the expected difficulty from a block header
@@ -595,16 +721,25 @@ library BTCUtils {
     /// @param _a        The first hash
     /// @param _b        The second hash
     /// @return          The double-sha256 of the concatenated hashes
-    function _hash256MerkleStep(bytes memory _a, bytes memory _b) internal pure returns (bytes32) {
-        return hash256(abi.encodePacked(_a, _b));
+    function _hash256MerkleStep(bytes memory _a, bytes memory _b) internal view returns (bytes32) {
+        return hash256View(abi.encodePacked(_a, _b));
     }
 
+    /// @notice          Concatenates and hashes two inputs for merkle proving
+    /// @param _a        The first hash
+    /// @param _b        The second hash
+    /// @return          The double-sha256 of the concatenated hashes
+    function _hash256MerkleStep(bytes32 _a, bytes32 _b) internal view returns (bytes32) {
+        return hash256Pair(_a, _b);
+    }
+
+
     /// @notice          Verifies a Bitcoin-style merkle tree
-    /// @dev             Leaves are 0-indexed.
+    /// @dev             Leaves are 0-indexed. Inefficient version.
     /// @param _proof    The proof. Tightly packed LE sha256 hashes. The last hash is the root
     /// @param _index    The index of the leaf
     /// @return          true if the proof is valid, else false
-    function verifyHash256Merkle(bytes memory _proof, uint _index) internal pure returns (bool) {
+    function verifyHash256Merkle(bytes memory _proof, uint _index) internal view returns (bool) {
         // Not an even number of hashes
         if (_proof.length % 32 != 0) {
             return false;
@@ -620,15 +755,46 @@ library BTCUtils {
             return false;
         }
 
-        uint _idx = _index;
-        bytes32 _root = _proof.slice(_proof.length - 32, 32).toBytes32();
-        bytes32 _current = _proof.slice(0, 32).toBytes32();
+        bytes32 _root = _proof.slice32(_proof.length - 32);
+        bytes32 _current = _proof.slice32(0);
+        bytes _tree = _proof.slice(32, _proof.length - 64);
 
-        for (uint i = 1; i < (_proof.length.div(32)) - 1; i++) {
+        return verifyHash256Merkle(_current, _tree, _root, _index);
+    }
+
+    /// @notice          Verifies a Bitcoin-style merkle tree
+    /// @dev             Leaves are 0-indexed. Efficient version.
+    /// @param _leaf     The leaf of the proof. LE sha256 hash.
+    /// @param _tree     The intermediate nodes in the proof.
+    ///                  Tightly packed LE sha256 hashes.
+    /// @param _root     The root of the proof. LE sha256 hash.
+    /// @param _index    The index of the leaf
+    /// @return          true if the proof is valid, else false
+    function verifyHash256Merkle(
+        bytes32 _leaf,
+        bytes memory _tree,
+        bytes32 _root,
+        uint _index
+    ) internal view returns (bool) {
+        // Not an even number of hashes
+        if (_tree.length % 32 != 0) {
+            return false;
+        }
+
+        // Should never occur
+        if (_tree.length == 0) {
+            return false;
+        }
+
+        uint _idx = _index;
+        bytes32 _current = _leaf;
+
+        // i moves in increments of 32
+        for (uint i = 0; i < _tree.length; i += 32) {
             if (_idx % 2 == 1) {
-                _current = _hash256MerkleStep(_proof.slice(i * 32, 32), abi.encodePacked(_current));
+                _current = _hash256MerkleStep(_tree.slice32(i), _current);
             } else {
-                _current = _hash256MerkleStep(abi.encodePacked(_current), _proof.slice(i * 32, 32));
+                _current = _hash256MerkleStep(_current, _tree.slice32(i));
             }
             _idx = _idx >> 1;
         }

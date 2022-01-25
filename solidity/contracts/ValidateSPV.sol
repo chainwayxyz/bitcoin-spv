@@ -46,15 +46,19 @@ library ValidateSPV {
         bytes32 _merkleRoot,
         bytes memory _intermediateNodes,
         uint _index
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
         // Shortcut the empty-block case
         if (_txid == _merkleRoot && _index == 0 && _intermediateNodes.length == 0) {
             return true;
         }
 
-        bytes memory _proof = abi.encodePacked(_txid, _intermediateNodes, _merkleRoot);
         // If the Merkle proof failed, bubble up error
-        return _proof.verifyHash256Merkle(_index);
+        return verifyHash256Merkle(
+            _txid,
+            _intermediateNodes,
+            _merkleRoot,
+            _index
+        );
     }
 
     /// @notice             Hashes transaction to get txid
@@ -62,16 +66,16 @@ library ValidateSPV {
     /// @param _version     4-bytes version
     /// @param _vin         Raw bytes length-prefixed input vector
     /// @param _vout        Raw bytes length-prefixed output vector
-    /// @param _locktime   4-byte tx locktime
+    /// @param _locktime    4-byte tx locktime
     /// @return             32-byte transaction id, little endian
     function calculateTxId(
-        bytes memory _version,
+        bytes4 _version,
         bytes memory _vin,
         bytes memory _vout,
-        bytes memory _locktime
-    ) internal pure returns (bytes32) {
+        bytes4 _locktime
+    ) internal view returns (bytes32) {
         // Get transaction hash double-Sha256(version + nIns + inputs + nOuts + outputs + locktime)
-        return abi.encodePacked(_version, _vin, _vout, _locktime).hash256();
+        return abi.encodePacked(_version, _vin, _vout, _locktime).hash256View();
     }
 
     /// @notice                  Checks validity of header chain
@@ -88,10 +92,19 @@ library ValidateSPV {
 
         _totalDifficulty = 0;
 
+        bytes memory _header;
+
+        // Allocate _header with extra space after it to fit 3 full words
+        assembly {
+            _header := mload(0x40)
+            mstore(0x40, add(_header, add(32, 96)))
+            mstore(_header, 80)
+        }
+
         for (uint256 _start = 0; _start < _headers.length; _start += 80) {
 
             // ith header start index and ith header
-            bytes memory _header = _headers.slice(_start, 80);
+            _headers.sliceInPlace(_header, _start);
 
             // After the first header, check that headers are in a chain
             if (_start != 0) {
@@ -118,7 +131,7 @@ library ValidateSPV {
     /// @return             true if header work is valid, false otherwise
     function validateHeaderWork(bytes32 _digest, uint256 _target) internal pure returns (bool) {
         if (_digest == bytes32(0)) {return false;}
-        return (abi.encodePacked(_digest).reverseEndianness().bytesToUint() < _target);
+        return (uint256(_digest).reverseUint256() < _target);
     }
 
     /// @notice                     Checks validity of header chain
@@ -129,7 +142,7 @@ library ValidateSPV {
     function validateHeaderPrevHash(bytes memory _header, bytes32 _prevHeaderDigest) internal pure returns (bool) {
 
         // Extract prevHash of current header
-        bytes32 _prevHash = _header.extractPrevBlockLE().toBytes32();
+        bytes32 _prevHash = _header.extractPrevBlockLE();
 
         // Compare prevHash of current header to previous header's digest
         if (_prevHash != _prevHeaderDigest) {return false;}

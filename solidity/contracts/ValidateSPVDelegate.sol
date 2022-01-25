@@ -31,7 +31,7 @@ library ValidateSPVDelegate {
         bytes32 _merkleRoot,
         bytes memory _proof,
         uint _index
-    ) public pure returns (bool) {
+    ) public view returns (bool) {
         return ValidateSPV.prove(_txid, _merkleRoot, _proof, _index);
     }
 
@@ -43,11 +43,11 @@ library ValidateSPVDelegate {
     /// @ param _locktime   4-byte tx locktime
     /// @return             32-byte transaction id, little endian
     function calculateTxId(
-        bytes memory _version,
+        bytes4 _version,
         bytes memory _vin,
         bytes memory _vout,
-        bytes memory _locktime
-    ) public pure returns (bytes32) {
+        bytes4 _locktime
+    ) public view returns (bytes32) {
         return ValidateSPV.calculateTxId(_version, _vin, _vout, _locktime);
     }
 
