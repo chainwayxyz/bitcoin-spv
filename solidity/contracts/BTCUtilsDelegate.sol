@@ -324,7 +324,7 @@ library BTCUtilsDelegate {
     /// @param _a        The first hash
     /// @param _b        The second hash
     /// @return          The double-sha256 of the concatenated hashes
-    function _hash256MerkleStep(bytes memory _a, bytes memory _b) public pure returns (bytes32) {
+    function _hash256MerkleStep(bytes memory _a, bytes memory _b) public view returns (bytes32) {
         return BTCUtils._hash256MerkleStep(_a, _b);
     }
 

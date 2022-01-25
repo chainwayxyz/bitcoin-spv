@@ -251,8 +251,6 @@ library BTCUtils {
         require(_varIntDataLen != ERR_BAD_ARG, "Read overrun during VarInt parsing");
         require(_index < _nIns, "Vin read overrun");
 
-        bytes memory _remaining;
-
         uint256 _len = 0;
         uint256 _offset = 1 + _varIntDataLen;
 
@@ -472,8 +470,6 @@ library BTCUtils {
         (_varIntDataLen, _nOuts) = parseVarInt(_vout);
         require(_varIntDataLen != ERR_BAD_ARG, "Read overrun during VarInt parsing");
         require(_index < _nOuts, "Vout read overrun");
-
-        bytes memory _remaining;
 
         uint256 _len = 0;
         uint256 _offset = 1 + _varIntDataLen;
@@ -757,7 +753,7 @@ library BTCUtils {
 
         bytes32 _root = _proof.slice32(_proof.length - 32);
         bytes32 _current = _proof.slice32(0);
-        bytes _tree = _proof.slice(32, _proof.length - 64);
+        bytes memory _tree = _proof.slice(32, _proof.length - 64);
 
         return verifyHash256Merkle(_current, _tree, _root, _index);
     }
