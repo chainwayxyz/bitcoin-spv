@@ -53,7 +53,7 @@ library ValidateSPV {
         }
 
         // If the Merkle proof failed, bubble up error
-        return verifyHash256Merkle(
+        return BTCUtils.verifyHash256Merkle(
             _txid,
             _intermediateNodes,
             _merkleRoot,

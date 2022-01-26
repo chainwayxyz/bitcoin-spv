@@ -104,7 +104,7 @@ library CheckBitcoinSigsDelegate {
         bytes8 _inputValue,  // 8-byte LE
         bytes8 _outputValue,  // 8-byte LE
         bytes20 _outputPKH  // 20 byte hash160
-    ) public pure returns (bytes32) {
+    ) public view returns (bytes32) {
         return CheckBitcoinSigs.oneInputOneOutputSighash(
             _outpoint,
             _inputPKH,

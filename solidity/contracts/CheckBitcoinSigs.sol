@@ -172,7 +172,7 @@ library CheckBitcoinSigs {
         bytes8 _inputValue,  // 8-byte LE
         bytes8 _outputValue,  // 8-byte LE
         bytes20 _outputPKH  // 20-byte hash160
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         return wpkhSpendSighash(
             _outpoint,
             _inputPKH,
@@ -198,7 +198,7 @@ library CheckBitcoinSigs {
         bytes8 _inputValue,  // 8-byte LE
         bytes8 _outputValue,  // 8-byte LE
         bytes20 _outputPKH  // 20-byte hash160
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         return wpkhToWpkhSighash(_outpoint, _inputPKH, _inputValue, _outputValue, _outputPKH);
     }
 
