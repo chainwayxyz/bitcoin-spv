@@ -70,7 +70,8 @@ module.exports = {
     reporterOptions : {
       excludeContracts: [],
       currency: 'USD',
-      gasPrice: 10
+      gasPrice: 10,
+      src: 'contracts/test'
     }
   },
 

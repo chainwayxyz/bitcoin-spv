@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "compile": "truffle compile",
-    "test": "cp ../testVectors.json test/ && truffle test",
+    "test": "cp ../testVectors.json test/ && truffle test --reporter eth-gas-reporter",
     "test:coverage": "cp ../testVectors.json test/ && npx solidity-coverage",
     "lint": "solium -d contracts/ && eslint ./test",
     "lint:fix": "solium --fix -d contracts/ && eslint --fix ./test"
