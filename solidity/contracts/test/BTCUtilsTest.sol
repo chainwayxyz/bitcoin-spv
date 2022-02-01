@@ -69,6 +69,14 @@ contract BTCUtilsTest {
         return BTCUtils.hash256(_b);
     }
 
+    /// @notice          Implements bitcoin's hash256 (double sha2)
+    /// @dev             abi.encodePacked changes the return to bytes instead of bytes32
+    /// @param _b        The pre-image
+    /// @return          The digest
+    function hash256View(bytes memory _b) public returns (bytes32) {
+        return BTCUtils.hash256View(_b);
+    }
+
     /* ************ */
     /* Legacy Input */
     /* ************ */

@@ -117,6 +117,14 @@ contract('BTCUtils', () => {
     }
   });
 
+  it('implements bitcoin\'s hash256 as a low-level function', async () => {
+    for (let i = 0; i < hash256.length; i += 1) {
+      await instance.hash256View(hash256[i].input);
+      const res = await instance.hash256View.call(hash256[i].input);
+      assert.strictEqual(res, hash256[i].output);
+    }
+  });
+
   it('implements hash256MerkleStep', async () => {
     for (let i = 0; i < hash256MerkleStep.length; i += 1) {
       /* eslint-disable-next-line */
