@@ -109,6 +109,15 @@ contract('BTCUtils', () => {
     }
   });
 
+  it('implements bitcoin\'s hash160 as a low-level function', async () => {
+    for (let i = 0; i < hash160.length; i += 1) {
+      await instance.hash160View(hash160[i].input);
+      const res = await instance.hash160View.call(hash160[i].input);
+      assert.strictEqual(res, hash160[i].output);
+    }
+  });
+
+
   it('implements bitcoin\'s hash256', async () => {
     for (let i = 0; i < hash256.length; i += 1) {
       await instance.hash256(hash256[i].input);

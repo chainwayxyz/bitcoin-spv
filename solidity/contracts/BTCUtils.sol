@@ -197,6 +197,20 @@ library BTCUtils {
         return abi.encodePacked(ripemd160(abi.encodePacked(sha256(_b))));
     }
 
+    /// @notice          Implements bitcoin's hash160 (sha2 + ripemd160)
+    /// @dev             sha2 precompile at address(2), ripemd160 at address(3)
+    /// @param _b        The pre-image
+    /// @return res      The digest
+    function hash160View(bytes memory _b) internal view returns (bytes20 res) {
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), 0x00, 32))
+            pop(staticcall(gas(), 3, 0x00, 32, 0x00, 32))
+            // read from position 12 = 0c
+            res := mload(0x0c)
+        }
+    }
+
     /// @notice          Implements bitcoin's hash256 (double sha2)
     /// @dev             abi.encodePacked changes the return to bytes instead of bytes32
     /// @param _b        The pre-image

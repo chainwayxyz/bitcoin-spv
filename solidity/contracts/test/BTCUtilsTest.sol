@@ -61,6 +61,14 @@ contract BTCUtilsTest {
         return BTCUtils.hash160(_b);
     }
 
+    /// @notice          Implements bitcoin's hash160 (rmd160(sha2()))
+    /// @dev             abi.encodePacked changes the return to bytes instead of bytes32
+    /// @param _b        The pre-image
+    /// @return          The digest
+    function hash160View(bytes memory _b) public returns (bytes20) {
+        return BTCUtils.hash160View(_b);
+    }
+
     /// @notice          Implements bitcoin's hash256 (double sha2)
     /// @dev             abi.encodePacked changes the return to bytes instead of bytes32
     /// @param _b        The pre-image
