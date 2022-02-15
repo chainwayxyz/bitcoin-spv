@@ -30,7 +30,7 @@ contract ValidateSPVTest {
         bytes32 _merkleRoot,
         bytes memory _proof,
         uint _index
-    ) public view returns (bool) {
+    ) public returns (bool) {
         return ValidateSPV.prove(_txid, _merkleRoot, _proof, _index);
     }
 
@@ -46,7 +46,7 @@ contract ValidateSPVTest {
         bytes memory _vin,
         bytes memory _vout,
         bytes4 _locktime
-    ) public view returns (bytes32) {
+    ) public returns (bytes32) {
         return ValidateSPV.calculateTxId(_version, _vin, _vout, _locktime);
     }
 
@@ -54,7 +54,7 @@ contract ValidateSPVTest {
     /// @notice             Compares the hash of each header to the prevHash in the next header
     /// @param _headers     Raw byte array of header chain
     /// @return _reqDiff    The total accumulated difficulty of the header chain
-    function validateHeaderChain(bytes memory _headers) public view returns (uint256 _reqDiff) {
+    function validateHeaderChain(bytes memory _headers) public returns (uint256 _reqDiff) {
         return ValidateSPV.validateHeaderChain(_headers);
     }
 
@@ -62,7 +62,7 @@ contract ValidateSPVTest {
     /// @notice             Compares the hash of each header to the prevHash in the next header
     /// @param _headers     Raw byte array of header chain
     /// @return _reqDiff    The total accumulated difficulty of the header chain
-    function validateHeaderChainTx(bytes memory _headers) public view returns (uint256 _reqDiff) {
+    function validateHeaderChainTx(bytes memory _headers) public returns (uint256 _reqDiff) {
         return ValidateSPV.validateHeaderChain(_headers);
     }
 
@@ -70,7 +70,7 @@ contract ValidateSPVTest {
     /// @param _digest      Header digest
     /// @param _target      The target threshold
     /// @return             true if header work is valid, false otherwise
-    function validateHeaderWork(bytes32 _digest, uint256 _target) public pure returns (bool) {
+    function validateHeaderWork(bytes32 _digest, uint256 _target) public returns (bool) {
         return ValidateSPV.validateHeaderWork(_digest, _target);
     }
 
@@ -79,7 +79,7 @@ contract ValidateSPVTest {
     /// @param _header              The raw bytes header
     /// @param _prevHeaderDigest    The previous header's digest
     /// @return                     true if header chain is valid, false otherwise
-    function validateHeaderPrevHash(bytes memory _header, bytes32 _prevHeaderDigest) public pure returns (bool) {
+    function validateHeaderPrevHash(bytes memory _header, bytes32 _prevHeaderDigest) public returns (bool) {
         return ValidateSPV.validateHeaderPrevHash(_header, _prevHeaderDigest);
     }
 }

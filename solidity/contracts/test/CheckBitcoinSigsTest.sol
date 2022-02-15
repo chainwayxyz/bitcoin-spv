@@ -11,7 +11,7 @@ contract CheckBitcoinSigsTest {
     /// @dev             The address is the last 20 bytes of the keccak256 of the address
     /// @param _pubkey   The public key X & Y. Unprefixed, as a 64-byte array
     /// @return          The account address
-    function accountFromPubkey(bytes memory _pubkey) public pure returns (address) {
+    function accountFromPubkey(bytes memory _pubkey) public returns (address) {
         return CheckBitcoinSigs.accountFromPubkey(_pubkey);
     }
 
@@ -19,7 +19,7 @@ contract CheckBitcoinSigsTest {
     /// @dev             Compresses keys to 33 bytes as required by Bitcoin
     /// @param _pubkey   The public key, compressed or uncompressed
     /// @return          The p2wkph output script
-    function p2wpkhFromPubkey(bytes memory _pubkey) public pure returns (bytes memory) {
+    function p2wpkhFromPubkey(bytes memory _pubkey) public returns (bytes memory) {
         return CheckBitcoinSigs.p2wpkhFromPubkey(_pubkey);
     }
 
@@ -37,7 +37,7 @@ contract CheckBitcoinSigsTest {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) public pure returns (bool) {
+    ) public returns (bool) {
         return CheckBitcoinSigs.checkSig(_pubkey, _digest, _v, _r, _s);
     }
 
@@ -57,7 +57,7 @@ contract CheckBitcoinSigsTest {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) public pure returns (bool) {
+    ) public returns (bool) {
         return CheckBitcoinSigs.checkBitcoinSig(
             _p2wpkhOutputScript,
             _pubkey,
@@ -74,7 +74,7 @@ contract CheckBitcoinSigsTest {
     function isSha256Preimage(
         bytes memory _candidate,
         bytes32 _digest
-    ) public pure returns (bool) {
+    ) public returns (bool) {
         return CheckBitcoinSigs.isSha256Preimage(_candidate, _digest);
     }
 
@@ -86,7 +86,7 @@ contract CheckBitcoinSigsTest {
     function isKeccak256Preimage(
         bytes memory _candidate,
         bytes32 _digest
-    ) public pure returns (bool) {
+    ) public returns (bool) {
         return CheckBitcoinSigs.isKeccak256Preimage(_candidate, _digest);
     }
 
@@ -104,7 +104,7 @@ contract CheckBitcoinSigsTest {
         bytes8 _inputValue,  // 8-byte LE
         bytes8 _outputValue,  // 8-byte LE
         bytes20 _outputPKH  // 20 byte hash160
-    ) public view returns (bytes32) {
+    ) public returns (bytes32) {
         return CheckBitcoinSigs.oneInputOneOutputSighash(
             _outpoint,
             _inputPKH,

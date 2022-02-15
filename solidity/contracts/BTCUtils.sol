@@ -197,6 +197,20 @@ library BTCUtils {
         return abi.encodePacked(ripemd160(abi.encodePacked(sha256(_b))));
     }
 
+    /// @notice          Implements bitcoin's hash160 (sha2 + ripemd160)
+    /// @dev             sha2 precompile at address(2), ripemd160 at address(3)
+    /// @param _b        The pre-image
+    /// @return res      The digest
+    function hash160View(bytes memory _b) internal view returns (bytes20 res) {
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+            pop(staticcall(gas(), 2, add(_b, 32), mload(_b), 0x00, 32))
+            pop(staticcall(gas(), 3, 0x00, 32, 0x00, 32))
+            // read from position 12 = 0c
+            res := mload(0x0c)
+        }
+    }
+
     /// @notice          Implements bitcoin's hash256 (double sha2)
     /// @dev             abi.encodePacked changes the return to bytes instead of bytes32
     /// @param _b        The pre-image
@@ -270,7 +284,7 @@ library BTCUtils {
     /// @param _input    The input
     /// @return          True for legacy, False for witness
     function isLegacyInput(bytes memory _input) internal pure returns (bool) {
-        return _input.keccak256Slice(36, 1) != keccak256(hex"00");
+        return _input[36] != hex"00";
     }
 
     /// @notice          Determines the length of a scriptSig in an input
@@ -508,7 +522,7 @@ library BTCUtils {
     /// @param _output   The output
     /// @return          Any data contained in the opreturn output, null if not an op return
     function extractOpReturnData(bytes memory _output) internal pure returns (bytes memory) {
-        if (_output.keccak256Slice(9, 1) != keccak256(hex"6a")) {
+        if (_output[9] != hex"6a") {
             return hex"";
         }
         bytes1 _dataLen = _output[10];
@@ -542,18 +556,18 @@ library BTCUtils {
             }
             return _output.slice(11, _payloadLen);
         } else {
-            bytes32 _tag = _output.keccak256Slice(8, 3);
+            bytes3 _tag = _output.slice3(8);
             // p2pkh
-            if (_tag == keccak256(hex"1976a9")) {
+            if (_tag == hex"1976a9") {
                 // Check for maliciously formatted p2pkh
                 // No need to worry about underflow, b/c of _scriptLen check
                 if (uint8(_output[11]) != 0x14 ||
-                    _output.keccak256Slice(_output.length - 2, 2) != keccak256(hex"88ac")) {
+                    _output.slice2(_output.length - 2) != hex"88ac") {
                     return hex"";
                 }
                 return _output.slice(12, 20);
             //p2sh
-            } else if (_tag == keccak256(hex"17a914")) {
+            } else if (_tag == hex"17a914") {
                 // Check for maliciously formatted p2sh
                 // No need to worry about underflow, b/c of _scriptLen check
                 if (uint8(_output[_output.length - 1]) != 0x87) {

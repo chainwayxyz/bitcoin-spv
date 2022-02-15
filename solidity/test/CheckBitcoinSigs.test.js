@@ -19,7 +19,8 @@ contract('CheckBitcoinSigs', async () => {
 
   describe('#accountFromPubkey', async () => {
     it('generates an account from a pubkey', async () => {
-      const res = await instance.accountFromPubkey('0x33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333');
+      await instance.accountFromPubkey('0x33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333');
+      const res = await instance.accountFromPubkey.call('0x33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333');
       assert.equal(res.toLowerCase(), '0x183671cd69c7f9a760f9f1c59393df69e893e557');
     });
 
@@ -40,17 +41,20 @@ contract('CheckBitcoinSigs', async () => {
     const outputScript = '0x00143bc28d6d92d9073fb5e3adf481795eaf446bceed';
 
     it('handles unprefixed uncompressed keys', async () => {
-      const res = await instance.p2wpkhFromPubkey(uncompressed);
+      await instance.p2wpkhFromPubkey(uncompressed);
+      const res = await instance.p2wpkhFromPubkey.call(uncompressed);
       assert.equal(res, outputScript);
     });
 
     it('handles prefixed uncompressed keys', async () => {
-      const res = await instance.p2wpkhFromPubkey(prefixedUncompressed);
+      await instance.p2wpkhFromPubkey(prefixedUncompressed);
+      const res = await instance.p2wpkhFromPubkey.call(prefixedUncompressed);
       assert.equal(res, outputScript);
     });
 
     it('handles compressed keys', async () => {
-      const res = await instance.p2wpkhFromPubkey(compressed);
+      await instance.p2wpkhFromPubkey(compressed);
+      const res = await instance.p2wpkhFromPubkey.call(compressed);
       assert.equal(res, outputScript);
     });
 
@@ -69,12 +73,14 @@ contract('CheckBitcoinSigs', async () => {
     // signing with privkey '11' * 32
     // using RFC 6979 nonce (libsecp256k1)
     it('validates signatures', async () => {
-      const res = await instance.checkSig(pubkey, digest, v, r, s);
+      await instance.checkSig(pubkey, digest, v, r, s);
+      const res = await instance.checkSig.call(pubkey, digest, v, r, s);
       assert.isTrue(res);
     });
 
     it('fails on bad signatures', async () => {
-      const res = await instance.checkSig(pubkey, digest, 28, r, s);
+      await instance.checkSig(pubkey, digest, 28, r, s);
+      const res = await instance.checkSig.call(pubkey, digest, 28, r, s);
       assert.isFalse(res);
     });
 
@@ -90,17 +96,20 @@ contract('CheckBitcoinSigs', async () => {
   describe('#checkBitcoinSig', async () => {
     const witnessScript = '0x0014fc7250a211deddc70ee5a2738de5f07817351cef';
     it('returns false if the pubkey does not match the witness script', async () => {
-      const res = await instance.checkBitcoinSig('0x00', pubkey, constants.EMPTY, 1, constants.EMPTY, constants.EMPTY);
+      await instance.checkBitcoinSig('0x00', pubkey, constants.EMPTY, 1, constants.EMPTY, constants.EMPTY);
+      const res = await instance.checkBitcoinSig.call('0x00', pubkey, constants.EMPTY, 1, constants.EMPTY, constants.EMPTY);
       assert.isFalse(res);
     });
 
     it('returns true if the signature is valid and matches the script', async () => {
-      const res = await instance.checkBitcoinSig(witnessScript, pubkey, digest, v, r, s);
+      await instance.checkBitcoinSig(witnessScript, pubkey, digest, v, r, s);
+      const res = await instance.checkBitcoinSig.call(witnessScript, pubkey, digest, v, r, s);
       assert.isTrue(res);
     });
 
     it('returns false if the signature is invalid', async () => {
-      const res = await instance.checkBitcoinSig(witnessScript, pubkey, digest, v + 1, r, s);
+      await instance.checkBitcoinSig(witnessScript, pubkey, digest, v + 1, r, s);
+      const res = await instance.checkBitcoinSig.call(witnessScript, pubkey, digest, v + 1, r, s);
       assert.isFalse(res);
     });
 
@@ -117,13 +126,17 @@ contract('CheckBitcoinSigs', async () => {
   describe('#isSha256Preimage', async () => {
     it('identifies sha256 preimages', async () => {
       let res;
-      res = await instance.isSha256Preimage('0x01', '0x4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a');
+      await instance.isSha256Preimage('0x01', '0x4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a');
+      res = await instance.isSha256Preimage.call('0x01', '0x4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a');
       assert.isTrue(res);
-      res = await instance.isSha256Preimage('0x02', '0xdbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986');
+      await instance.isSha256Preimage('0x02', '0xdbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986');
+      res = await instance.isSha256Preimage.call('0x02', '0xdbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986');
       assert.isTrue(res);
-      res = await instance.isSha256Preimage('0x03', '0x084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5');
+      await instance.isSha256Preimage('0x03', '0x084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5');
+      res = await instance.isSha256Preimage.call('0x03', '0x084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5');
       assert.isTrue(res);
-      res = await instance.isSha256Preimage('0x04', '0x084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5');
+      await instance.isSha256Preimage('0x04', '0x084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5');
+      res = await instance.isSha256Preimage.call('0x04', '0x084fed08b978af4d7d196a7446a86b58009e636b611db16211b65a9aadff29c5');
       assert.isFalse(res);
     });
   });
@@ -131,13 +144,17 @@ contract('CheckBitcoinSigs', async () => {
   describe('#isKeccak256Preimage', async () => {
     it('identifies keccak256 preimages', async () => {
       let res;
-      res = await instance.isKeccak256Preimage('0x01', '0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2');
+      await instance.isKeccak256Preimage('0x01', '0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2');
+      res = await instance.isKeccak256Preimage.call('0x01', '0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2');
       assert.isTrue(res);
-      res = await instance.isKeccak256Preimage('0x02', '0xf2ee15ea639b73fa3db9b34a245bdfa015c260c598b211bf05a1ecc4b3e3b4f2');
+      await instance.isKeccak256Preimage('0x02', '0xf2ee15ea639b73fa3db9b34a245bdfa015c260c598b211bf05a1ecc4b3e3b4f2');
+      res = await instance.isKeccak256Preimage.call('0x02', '0xf2ee15ea639b73fa3db9b34a245bdfa015c260c598b211bf05a1ecc4b3e3b4f2');
       assert.isTrue(res);
-      res = await instance.isKeccak256Preimage('0x03', '0x69c322e3248a5dfc29d73c5b0553b0185a35cd5bb6386747517ef7e53b15e287');
+      await instance.isKeccak256Preimage('0x03', '0x69c322e3248a5dfc29d73c5b0553b0185a35cd5bb6386747517ef7e53b15e287');
+      res = await instance.isKeccak256Preimage.call('0x03', '0x69c322e3248a5dfc29d73c5b0553b0185a35cd5bb6386747517ef7e53b15e287');
       assert.isTrue(res);
-      res = await instance.isKeccak256Preimage('0x04', '0x69c322e3248a5dfc29d73c5b0553b0185a35cd5bb6386747517ef7e53b15e287');
+      await instance.isKeccak256Preimage('0x04', '0x69c322e3248a5dfc29d73c5b0553b0185a35cd5bb6386747517ef7e53b15e287');
+      res = await instance.isKeccak256Preimage.call('0x04', '0x69c322e3248a5dfc29d73c5b0553b0185a35cd5bb6386747517ef7e53b15e287');
       assert.isFalse(res);
     });
   });
@@ -161,7 +178,14 @@ contract('CheckBitcoinSigs', async () => {
     // == hash160(023333333333333333333333333333333333333333333333333333333333333333)
 
     it('calculates the sighash of a bizarre transaction that for some reason we need ;)', async () => {
-      const res = await instance.oneInputOneOutputSighash(
+      await instance.oneInputOneOutputSighash(
+        outpoint,
+        inputPKH,
+        inputValue,
+        outputValue,
+        outputPKH
+      );
+      const res = await instance.oneInputOneOutputSighash.call(
         outpoint,
         inputPKH,
         inputValue,

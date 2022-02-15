@@ -46,7 +46,8 @@ contract('ValidateSPV', () => {
         const {
           txIdLE, merkleRootLE, proof, index
         } = prove[i].input;
-        const res = await instance.prove(txIdLE, merkleRootLE, proof, index);
+        await instance.prove(txIdLE, merkleRootLE, proof, index);
+        const res = await instance.prove.call(txIdLE, merkleRootLE, proof, index);
         assert.strictEqual(res, prove[i].output);
       }
     });
@@ -58,7 +59,8 @@ contract('ValidateSPV', () => {
         const {
           version, vin, vout, locktime
         } = calculateTxId[i].input;
-        const res = await instance.calculateTxId(version, vin, vout, locktime);
+        await instance.calculateTxId(version, vin, vout, locktime);
+        const res = await instance.calculateTxId.call(version, vin, vout, locktime);
         assert.strictEqual(res, calculateTxId[i].output);
       }
     });
@@ -67,7 +69,8 @@ contract('ValidateSPV', () => {
   describe('#validateHeaderChain', async () => {
     it('returns true if header chain is valid', async () => {
       for (let i = 0; i < validateHeaderChain.length; i += 1) {
-        const res = await instance.validateHeaderChain(validateHeaderChain[i].input);
+        await instance.validateHeaderChain(validateHeaderChain[i].input);
+        const res = await instance.validateHeaderChain.call(validateHeaderChain[i].input);
 
         // Execute within Tx to measure gas amount
         await instance.validateHeaderChainTx(validateHeaderChain[i].input);
@@ -78,7 +81,8 @@ contract('ValidateSPV', () => {
 
     it('returns error if header chain is invalid', async () => {
       for (let i = 0; i < validateHeaderChainError.length; i += 1) {
-        const res = await instance.validateHeaderChain(validateHeaderChainError[i].input);
+        await instance.validateHeaderChain(validateHeaderChainError[i].input);
+        const res = await instance.validateHeaderChain.call(validateHeaderChainError[i].input);
 
         // Execute within Tx to measure gas amount
         await instance.validateHeaderChainTx(validateHeaderChainError[i].input);
@@ -93,7 +97,8 @@ contract('ValidateSPV', () => {
       for (let i = 0; i < validateHeaderWork.length; i += 1) {
         const { digest, target } = validateHeaderWork[i].input;
         // Is this right?
-        const res = await instance.validateHeaderWork(digest, target);
+        await instance.validateHeaderWork(digest, target);
+        const res = await instance.validateHeaderWork.call(digest, target);
         assert.strictEqual(res, validateHeaderWork[i].output);
       }
     });
@@ -102,7 +107,11 @@ contract('ValidateSPV', () => {
   describe('#validateHeaderPrevHash', async () => {
     it('returns true if header prevHash is valid', async () => {
       for (let i = 0; i < validateHeaderPrevHash.length; i += 1) {
-        const res = await instance.validateHeaderPrevHash(
+        await instance.validateHeaderPrevHash(
+          validateHeaderPrevHash[i].input.header,
+          validateHeaderPrevHash[i].input.prevHash
+        );
+        const res = await instance.validateHeaderPrevHash.call(
           validateHeaderPrevHash[i].input.header,
           validateHeaderPrevHash[i].input.prevHash
         );

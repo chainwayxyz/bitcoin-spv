@@ -28,7 +28,7 @@ library CheckBitcoinSigs {
     /// @dev             Compresses keys to 33 bytes as required by Bitcoin
     /// @param _pubkey   The public key, compressed or uncompressed
     /// @return          The p2wkph output script
-    function p2wpkhFromPubkey(bytes memory _pubkey) internal pure returns (bytes memory) {
+    function p2wpkhFromPubkey(bytes memory _pubkey) internal view returns (bytes memory) {
         bytes memory _compressedPubkey;
         uint8 _prefix;
 
@@ -44,7 +44,7 @@ library CheckBitcoinSigs {
 
         require(_compressedPubkey.length == 33, "Witness PKH requires compressed keys");
 
-        bytes memory _pubkeyHash = _compressedPubkey.hash160();
+        bytes20 _pubkeyHash = _compressedPubkey.hash160View();
         return abi.encodePacked(hex"0014", _pubkeyHash);
     }
 
@@ -85,7 +85,7 @@ library CheckBitcoinSigs {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) internal pure returns (bool) {
+    ) internal view returns (bool) {
         require(_pubkey.length == 64, "Requires uncompressed unprefixed pubkey");
 
         bool _isExpectedSigner = keccak256(p2wpkhFromPubkey(_pubkey)) == keccak256(_p2wpkhOutputScript);  // is it the expected signer?
@@ -136,19 +136,25 @@ library CheckBitcoinSigs {
     ) internal view returns (bytes32) {
         // Fixes elements to easily make a 1-in 1-out sighash digest
         // Does not support timelocks
-        bytes memory _scriptCode = abi.encodePacked(
-            hex"1976a914",  // length, dup, hash160, pkh_length
-            _inputPKH,
-            hex"88ac");  // equal, checksig
+        // bytes memory _scriptCode = abi.encodePacked(
+        //     hex"1976a914",  // length, dup, hash160, pkh_length
+        //     _inputPKH,
+        //     hex"88ac");  // equal, checksig
+
         bytes32 _hashOutputs = abi.encodePacked(
             _outputValue,  // 8-byte LE
             _outputScript).hash256View();
+
         bytes memory _sighashPreimage = abi.encodePacked(
             hex"01000000",  // version
             _outpoint.hash256View(),  // hashPrevouts
             hex"8cb9012517c817fead650287d61bdd9c68803b6bf9c64133dcab3e65b5a50cb9",  // hashSequence(00000000)
             _outpoint,  // outpoint
-            _scriptCode,  // p2wpkh script code
+            // p2wpkh script code
+            hex"1976a914",  // length, dup, hash160, pkh_length
+            _inputPKH,
+            hex"88ac",  // equal, checksig
+            // end script code
             _inputValue,  // value of the input in 8-byte LE
             hex"00000000",  // input nSequence
             _hashOutputs,  // hash of the single output
