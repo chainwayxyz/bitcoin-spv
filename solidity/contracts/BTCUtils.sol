@@ -517,6 +517,17 @@ library BTCUtils {
         return _beValue;
     }
 
+    /// @notice          Extracts the value from the output in a tx
+    /// @dev             Value is an 8-byte little-endian number
+    /// @param _output   The byte array containing the output
+    /// @param _at       The starting index of the output in the array
+    /// @return          The output value
+    function extractValueAt(bytes memory _output, uint256 _at) internal pure returns (uint64) {
+        uint64 _leValue = uint64(_output.slice8(_at));
+        uint64 _beValue = reverseUint64(_leValue);
+        return _beValue;
+    }
+
     /// @notice          Extracts the data from an op return output
     /// @dev             Returns hex"" if no data or not an op return
     /// @param _output   The output
@@ -534,43 +545,57 @@ library BTCUtils {
     /// @param _output   The output
     /// @return          The hash committed to by the pk_script, or null for errors
     function extractHash(bytes memory _output) internal pure returns (bytes memory) {
-        uint8 _scriptLen = uint8(_output[8]);
+        return extractHashAt(_output, _output.length, 0);
+    }
+
+    /// @notice          Extracts the hash from the output script
+    /// @dev             Determines type by the length prefix and validates format
+    /// @param _output   The byte array containing the output
+    /// @param _len      The length of the output
+    /// @param _at       The starting index of the output in the array
+    /// @return          The hash committed to by the pk_script, or null for errors
+    function extractHashAt(
+        bytes memory _output,
+        uint256 _len,
+        uint256 _at
+    ) internal pure returns (bytes memory) {
+        uint8 _scriptLen = uint8(_output[8 + _at]);
 
         // don't have to worry about overflow here.
         // if _scriptLen + 9 overflows, then output.length would have to be < 9
         // for this check to pass. if it's < 9, then we errored when assigning
         // _scriptLen
-        if (_scriptLen + 9 != _output.length) {
+        if (_scriptLen + 9 +_at != _len) {
             return hex"";
         }
 
-        if (uint8(_output[9]) == 0) {
+        if (uint8(_output[9 + _at]) == 0) {
             if (_scriptLen < 2) {
                 return hex"";
             }
-            uint256 _payloadLen = uint8(_output[10]);
+            uint256 _payloadLen = uint8(_output[10 + _at]);
             // Check for maliciously formatted witness outputs.
             // No need to worry about underflow as long b/c of the `< 2` check
             if (_payloadLen != _scriptLen - 2 || (_payloadLen != 0x20 && _payloadLen != 0x14)) {
                 return hex"";
             }
-            return _output.slice(11, _payloadLen);
+            return _output.slice(11 + _at, _payloadLen);
         } else {
-            bytes3 _tag = _output.slice3(8);
+            bytes3 _tag = _output.slice3(8 + _at);
             // p2pkh
             if (_tag == hex"1976a9") {
                 // Check for maliciously formatted p2pkh
                 // No need to worry about underflow, b/c of _scriptLen check
-                if (uint8(_output[11]) != 0x14 ||
-                    _output.slice2(_output.length - 2) != hex"88ac") {
+                if (uint8(_output[11 + _at]) != 0x14 ||
+                    _output.slice2(_at + _len - 2) != hex"88ac") {
                     return hex"";
                 }
-                return _output.slice(12, 20);
+                return _output.slice(12 + _at, 20);
             //p2sh
             } else if (_tag == hex"17a914") {
                 // Check for maliciously formatted p2sh
                 // No need to worry about underflow, b/c of _scriptLen check
-                if (uint8(_output[_output.length - 1]) != 0x87) {
+                if (uint8(_output[_at + _len - 1]) != 0x87) {
                     return hex"";
                 }
                 return _output.slice(11, 20);
