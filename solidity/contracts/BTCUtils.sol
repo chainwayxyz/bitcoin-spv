@@ -248,6 +248,25 @@ library BTCUtils {
         }
     }
 
+    /// @notice          Implements bitcoin's hash256 (double sha2)
+    /// @dev             sha2 is precompiled smart contract located at address(2)
+    /// @param _b        The array containing the pre-image
+    /// @param at        The start of the pre-image
+    /// @param len       The length of the pre-image
+    /// @return res      The digest
+    function hash256Slice(
+        bytes memory _b,
+        uint256 at,
+        uint256 len
+    ) internal view returns (bytes32 res) {
+        // solium-disable-next-line security/no-inline-assembly
+        assembly {
+            pop(staticcall(gas(), 2, add(_b, add(32, at)), len, 0x00, 32))
+            pop(staticcall(gas(), 2, 0x00, 32, 0x00, 32))
+            res := mload(0x00)
+        }
+    }
+
     /* ************ */
     /* Legacy Input */
     /* ************ */
@@ -677,8 +696,17 @@ library BTCUtils {
     /// @param _header   The header
     /// @return          The target threshold
     function extractTarget(bytes memory _header) internal pure returns (uint256) {
-        uint24 _m = uint24(_header.slice3(72));
-        uint8 _e = uint8(_header[75]);
+        return extractTargetAt(_header, 0);
+    }
+
+    /// @notice          Extracts the target from a block header
+    /// @dev             Target is a 256-bit number encoded as a 3-byte mantissa and 1-byte exponent
+    /// @param _header   The array containing the header
+    /// @param at        The start of the header
+    /// @return          The target threshold
+    function extractTargetAt(bytes memory _header, uint256 at) internal pure returns (uint256) {
+        uint24 _m = uint24(_header.slice3(72 + at));
+        uint8 _e = uint8(_header[75 + at]);
         uint256 _mantissa = uint256(reverseUint24(_m));
         uint _exponent = _e - 3;
 
@@ -701,6 +729,18 @@ library BTCUtils {
     /// @return          The previous block's hash (little-endian)
     function extractPrevBlockLE(bytes memory _header) internal pure returns (bytes32) {
         return _header.slice32(4);
+    }
+
+    /// @notice          Extracts the previous block's hash from a block header
+    /// @dev             Block headers do NOT include block number :(
+    /// @param _header   The array containing the header
+    /// @param at        The start of the header
+    /// @return          The previous block's hash (little-endian)
+    function extractPrevBlockLEAt(
+        bytes memory _header,
+        uint256 at
+    ) internal pure returns (bytes32) {
+        return _header.slice32(4 + at);
     }
 
     /// @notice          Extracts the timestamp from a block header
