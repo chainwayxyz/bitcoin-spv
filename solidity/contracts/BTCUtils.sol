@@ -802,11 +802,11 @@ library BTCUtils {
         // i moves in increments of 32
         for (uint i = 0; i < _tree.length; i += 32) {
             if (_idx % 2 == 1) {
-                bytes32 left = _tree.slice32(i);
-                if (left == _current) {
+                bytes32 _left = _tree.slice32(i);
+                if (_left == _current) {
                     return false;
                 }
-                _current = _hash256MerkleStep(left, _current);
+                _current = _hash256MerkleStep(_left, _current);
             } else {
                 _current = _hash256MerkleStep(_current, _tree.slice32(i));
             }
