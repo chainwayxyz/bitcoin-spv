@@ -812,6 +812,16 @@ library BTCUtils {
             }
             _idx = _idx >> 1;
         }
+
+        // If the index points to existence of another node, bad proof
+        //
+        // e.g. if we had 3 leaves, the tree has 3 levels, so two hashes is enough
+        // 00, 01, 10 are valid indices
+        // without this check, we could also accept 101 or 110
+        if (_idx != 0) {
+            return false;
+        }
+
         return _current == _root;
     }
 
